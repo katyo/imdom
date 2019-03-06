@@ -1,0 +1,15 @@
+bin/
+dist/
+node_modules/
+es/
+.lws/
+*.js
+!rollup.config.js
+*.js.map
+*.d.ts
+!backend/src/sodium-native.d.ts
+*.tgz
+.rpt2*/
+cache/
+deprecated/
+package-lock.json
