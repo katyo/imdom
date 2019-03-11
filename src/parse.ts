@@ -1,5 +1,7 @@
-import { DomAttrs, DomStyles, DomFragment, DomNode, DomNodes } from './types';
-import { parse_classes } from './utils';
+/** @module parse */
+
+import { DomFlags, DomAttrs, DomStyles, DomNode, DomNodes, DomElement } from './types';
+import { EMPTY_STRING, node_selector } from './utils';
 
 const enum NodeType {
     Element = 1,
@@ -7,47 +9,37 @@ const enum NodeType {
     Comment = 8,
 }
 
-export function parse(node: Node, end: Node = node): DomFragment {
-    return {
-        $: node.parentNode as Element,
-        _: parse_tree(node, end),
+/** Parse DOM element into virtual DOM element */
+export function parse(node: Element, offset?: number, length?: number): DomElement {
+    return { // parse DOM element
+        f: DomFlags.Element, // set virtual node type to element (initially virtual element is detached)
+        $: node, // set DOM element node
+        x: node_selector(node), // set selector
+        a: parse_attrs(node.attributes), // initially all attributes treated as mutable
+        c: {}, // initially all classes sits in selector
+        s: parse_style((node as HTMLElement).style), // initially all styles treated as mutable
+        _: parse_children(node.childNodes, offset, length) // parse children nodes
     };
 }
 
-function parse_tree(node: Node | null, end: Node | null = node): DomNodes {
-    const children: DomNodes = [];
-    if (node) {
-        for (let child = node as Node;
-             child != (end as Node).nextSibling;
-             child = child.nextSibling as Node) {
-            children.push(parse_node(child));
-        }
-    }
-    return children;
-}
-
+/** Parse DOM node(s) into virtual DOM node */
 function parse_node(node: Node): DomNode {
     const {nodeType} = node;
-    return nodeType == NodeType.Element ? {
-        $: node as Element,
-        x: {
-            t: (node as Element).tagName,
-            i: (node as Element).id,
-            c: parse_classes((node as Element).className),
-            k: (node as Element).getAttribute('data-key') || void 0,
-        },
-        n: false,
-        a: parse_attrs((node as Element).attributes),
-        c: {},
-        s: parse_style((node as HTMLElement).style),
-        _: parse_tree(node.firstChild, node.lastChild)
-    } : nodeType == NodeType.Text ? {
-        $: node as Text,
-        t: node.textContent || '',
-    } : /* nodeType == NodeType.Comment ? */ {
-        $: node as Comment,
-        c: node.textContent || '',
+    return nodeType == NodeType.Element ? parse(node as Element) : {
+        // parse DOM text or comment
+        f: nodeType == NodeType.Text ? DomFlags.Text : DomFlags.Comment, // set virtual node type to text
+        $: node as Text | Comment, // set DOM text node
+        t: node.textContent || EMPTY_STRING, // set text value
     };
+}
+
+function parse_children(nodes: NodeListOf<Node>, i: number = 0, n: number = nodes.length - i): DomNodes {
+    const children: DomNodes = [];
+    n += i;
+    for (; i < n; i++) {
+        children.push(parse_node(nodes[i]));
+    }
+    return children;
 }
 
 function parse_attrs(node_attrs: NamedNodeMap): DomAttrs {
@@ -66,12 +58,14 @@ function parse_attrs(node_attrs: NamedNodeMap): DomAttrs {
 
 function parse_style(style: CSSStyleDeclaration): DomStyles {
     const styles = {} as DomStyles;
-    for (let i = 0; i < style.length; i++) {
-        const name = style[i];
-        styles[name] = {
-            v: style.getPropertyValue(name),
-            t: 0,
-        };
+    if (style) {
+        for (let i = 0; i < style.length; i++) {
+            const name = style[i];
+            styles[name] = {
+                v: style.getPropertyValue(name),
+                t: 0,
+            };
+        }
     }
     return styles;
 }

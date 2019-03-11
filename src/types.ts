@@ -1,3 +1,76 @@
+/** @module types */
+
+/** List of nodes */
+export type DomNodes = DomNode[];
+
+/** Single node */
+export type DomNode = DomElement | DomText | DomComment;
+
+/** Virtual node flags */
+export const enum DomFlags {
+    /** Text node */
+    Text = 1 << 0,
+    /** Comment node */
+    Comment = 1 << 1,
+    /** Element node */
+    Element = 1 << 2,
+    /** Namespase element node */
+    Ns = 1 << 3,
+    /** Node is attached */
+    Attached = 1 << 4,
+    /** Node has text content */
+    HasText = 1 << 5,
+}
+
+/** Basic node fields */
+export interface DomBase<T> {
+    /** Node flags */
+    f: DomFlags;
+    /** DOM node */
+    $: T;
+}
+
+/** Single text node */
+export interface DomText extends DomBase<Text> {
+    /** Text content */
+    t: string;
+}
+
+/** Single comment node */
+export interface DomComment extends DomBase<Comment> {
+    /** Text content */
+    t: string;
+}
+
+/** Single evement node */
+export interface DomElement extends DomBase<Element> {
+    /** Element selector */
+    x: DomSelector;
+    /** Mutable attributes */
+    a: DomAttrs;
+    /** Classes */
+    c: DomClasses;
+    /** Styles */
+    s: DomStyles;
+    /** Children nodes */
+    _: DomNodes;
+}
+
+/** Element selector */
+export interface DomSelector {
+    /** Tag name */
+    t: string;
+    /** Identifier (id attribute) */
+    i?: string;
+    /** Classes (class attribute) */
+    c?: DomClassSet;
+    /** Key (data-key attribute) */
+    k?: string;
+}
+
+/** Set of classes in selector */
+export type DomClassSet = Record<string, true>;
+
 /** Transaction identifier */
 export type DomTxnId = number;
 
@@ -66,62 +139,4 @@ export type DomEventMap = HTMLElementEventMap & Record<string, Event>;
 /** Event listener function */
 export interface DomEventFn<E extends keyof DomEventMap> {
     (event: DomEventMap[E]): void;
-}
-
-/** List of nodes */
-export type DomNodes = DomNode[];
-
-/** Single node */
-export type DomNode = DomElement | DomText | DomComment;
-
-/** Single text node */
-export interface DomText {
-    $: Text;
-    t: string;
-}
-
-/** Single comment node */
-export interface DomComment {
-    $: Comment;
-    c: string;
-}
-
-/** Single evement node */
-export interface DomElement {
-    /** DOM element */
-    $: Element;
-    /** Element selector */
-    x: DomSelector;
-    /** Pluged flag */
-    n: boolean;
-    /** Mutable attributes */
-    a: DomAttrs;
-    /** Classes */
-    c: DomClasses;
-    /** Styles */
-    s: DomStyles;
-    /** Children nodes */
-    _: DomNodes;
-}
-
-/** Element selector */
-export interface DomSelector {
-    /** Tag name */
-    t: string;
-    /** Identifier (id attribute) */
-    i?: string;
-    /** Classes (class attribute) */
-    c?: DomClassSet;
-    /** Key (data-key attribute) */
-    k?: string;
-}
-
-export type DomClassSet = Record<string, true>;
-
-/** Fragment */
-export interface DomFragment {
-    /** Parent DOM element */
-    $: Element;
-    /** Children nodes */
-    _: DomNodes;
 }

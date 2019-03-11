@@ -17,5 +17,15 @@
       "es2015.core"
     ]
   },
+  "typedocOptions": {
+    "name": "XDom",
+    "mode": "file",
+    "out": "doc",
+    "theme": "node_modules/aiden-doc/typedoc_theme",
+    "excludeNotExported": true,
+    "excludePrivate": true,
+    "excludeProtected": true,
+    "hideGenerator": true
+  },
   "files": ["src/index.ts"]
 }

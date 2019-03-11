@@ -1,11 +1,8 @@
-import { DomTxnId, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomFragment, DomElement, DomNodes, DomNode } from './types';
-import { match_element, match_text, match_comment, parse_selector, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './utils';
-import { Action, array_diff } from './diff';
+/** @module patch */
 
-/*export interface API {
-    parse(node: Node, end?: Node): DomFragment;
-    patch(target: DomFragment, render: () => void): void;
-}*/
+import { DomTxnId, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomNodes, DomNode, DomFlags, DomBase } from './types';
+import { match_element, match_text, match_comment, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, insert_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './utils';
+import { Action, array_diff } from './diff';
 
 let doc: Document;
 
@@ -16,103 +13,145 @@ export function init(doc_: Document = document) {
 
 export interface State {
     // element
-    $: DomFragment | DomElement,
+    $: DomElement,
     // current index
     i: number;
-    // new children
+    // old children
     _: DomNodes;
+    // old children usage
+    u: DomNodes;
 }
 
 let stack: State[] = [];
 let state: State;
 let txnid: DomTxnId = 0;
 
-function stack_push(new_state: State) {
-    stack.push(state = new_state);
+function stack_push(elm: DomElement) {
+    stack.push(state = {
+        $: elm, // place fragment or element at stack
+        i: 0, // set initial children pointer to 0
+        _: elm._, // place current children at state
+        u: elm._.slice(0),
+    });
+    elm._ = []; // reset virtual element or fragment children
 }
 
 function stack_pop() {
-    stack.pop();
-    state = stack[stack.length - 1];
+    const elm = state.$; // get current element from state
+    const node = elm.$ as HTMLElement; // get associated DOM element
+
+    if (elm.$ // when current element is parent
+        && (state._.length // and has new children
+            || elm._.length)) { // and has old children
+        let i = 0; // try get index of first child node from fragment offset
+        const changes = array_diff(state._, elm._); // compare children to get changes
+        //console.log(changes);
+        for (const change of changes) { // apply all changes to DOM children
+            switch (change.a) {
+                case Action.None: // when no changes
+                    i += change.c; // skip elements
+                    break;
+                case Action.Removed: // when nodes should been removed
+                    for (let j = 0; j < change.c; j++) {
+                        const removed = change.v[j]; // get virtual node to remove
+                        if (is_element(removed)) { // when virtual node is element
+                            if (removed.f & DomFlags.Attached) { // when virtual element is attached
+                                removed.f &= ~DomFlags.Attached; // mark virtual element as detached
+                            }
+                        }
+                        remove_node(node, removed.$); // remove DOM node from parent
+                    }
+                    break;
+                case Action.Added: // when nodes should been added
+                    for (let j = 0; j < change.c; j++, i++) {
+                        const added = change.v[j]; // get virtual node to add
+                        insert_node(node, added.$, i); // insert DOM node to parent
+                        if (is_element(added)) { // when virtual node is element
+                            if (!(added.f & DomFlags.Attached)) { // when virtual element is detached
+                                added.f |= DomFlags.Attached; // mark element as attached
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+    
+    stack.pop(); // pop state from stack
+    state = stack[stack.length - 1]; // update reference to current state
+
+    if (state) { // when stack is not empty
+        state.$._.push(elm as DomNode); // append virtual element to children of vitrual parent
+    }
 }
 
-export function seek_node<N extends DomNode, Ctx>(state: State, match_func: (node: DomNode, ctx: Ctx) => node is N, ctx: Ctx): N | void {
-    for (let i = state.i; ; ) {
-        for (; state.i < state.$._.length; ) {
-            const node = state.$._[state.i++];
-            if (match_func(node, ctx)) {
+function seek_same_node<N extends DomNode, Ctx>(state: State, match: (node: DomNode, ctx: Ctx) => node is N, ctx: Ctx): N | void {
+    let {i, u} = state;
+    for (; u.length; ) {
+        for (; i < u.length; i++) {
+            const node = u[i];
+            if (match(node, ctx)) {
+                u.splice(i, 1);
+                if (i >= u.length) state.i = 0;
                 return node;
             }
         }
-        if (i) {
-            i = state.i = 0;
+        if (state.i) {
+            i = 0;
             continue;
         }
         return;
     }
-
-    /*for (; state.i < state.e.C.length; ) {
-        const node = state.e.C[state.i];
-        if (match_func(node, ctx)) {
-            state.i++;
-            return node;
-        } else {
-            state.e.C.splice(state.i, 1);
-            state.e.$.removeChild(node.$);
-            state.C.push(node);
-        }
-    }
-
-    for (let i = state.I; ; ) {
-        for (; state.I < state.C.length; state.I++) {
-            const node = state.C[state.I];
-            if (match_func(node, ctx)) {
-                state.C.splice(state.I, 1);
-                state.e.C.push(node);
-                state.e.$.appendChild(node.$);
-                state.i ++;
-                return node;
-            }
-        }
-        if (i) {
-            i = state.I = 0;
-            continue;
-        }
-        return;
-    }*/
 }
 
-/*
-function reuse_classes() {
-    // move extra classes to mutable
-    if (!elm.c) {
-        elm.c = {} as DomClasses;
-        if (cls) {
-            for (const name in elm.x.c) {
-                if (!(name in cls)) {
-                    elm.c[name] = true;
-                    delete elm.x.c[name];
+function seek_akin_node<N extends DomNode, Ctx>(state: State, match: (node: DomNode, ctx: Ctx) => node is N, is: (node: DomNode, ctx: Ctx) => node is N, update: (node: N, ctx: Ctx) => void, ctx: Ctx): N | void {
+    let node = seek_same_node(state, match, ctx);
+    const {i, u} = state;
+    if (u.length && is(u[i], ctx)) {
+        update(node = u[i] as N, ctx);
+        u.splice(i, 1);
+        if (i >= u.length) state.i = 0;
+    }
+    return node;
+}
+
+/** Open new element */
+export function open(tag: string, key?: string) {
+    const sel = parse_selector(tag); // parse selector of opened element
+    
+    if (key) { // when key is provided
+        sel.k = key; // set key in selector
+    }
+    
+    let elm = seek_same_node(state, match_element, sel); // find virtual element usign selector
+
+    if (!elm) { // when virtual element missing
+        // create new detached virtual element
+        elm = {
+            f: DomFlags.Element,
+            $: create_element(doc, sel),
+            x: sel,
+            a: {},
+            c: {},
+            s: {},
+            _: []
+        };
+    } else if (!(elm.f && DomFlags.Attached)) { // when element is exists but not attached
+        const cls = elm.x.c; // get classes from element selector
+        
+        if (cls) { // when element has classes in selector
+            // move all classes which missing in selector to mutable class set
+            for (const name in cls) {
+                if (!sel.c || !(name in sel.c)) { // class not used in selector
+                    delete cls[name]; // remove class from element selector
+                    elm.c[name] = txnid; // add class to element mutable class set
                 }
             }
         }
     }
-}
-*/
-
-/** Open new element */
-export function open(tag: string, key?: string) {
-    const sel = parse_selector(tag);
-    if (key) sel.k = key;
-    const node = seek_node(state, match_element, sel);
-    stack_push(node ? {
-        $: node,
-        i: 0,
-        _: [],
-    } : {
-        $: { $: doc.createElement(sel.t), x: sel, a: {}, c: {}, s: {}, _: [] },
-        i: 0,
-        _: [],
-    });
+    
+    // push opened element at top of stack
+    stack_push(elm);
 }
 
 /** Close openned element */
@@ -143,63 +182,32 @@ export function close() {
             remove_style(node, name); // remove style from DOM element
         }
     }
-
-    // update children
-    let child: Element = node.firstChild as Element;
-    for (const change of array_diff(elm._, state._)) {
-        switch (change.a) {
-            case Action.None:
-                child = child.nextSibling as Element;
-                break;
-            case Action.Removed:
-                for (let j = 0; j < change.c; j++) {
-                    const removed = child;
-                    child = child.nextSibling as Element;
-                    node.removeChild(removed);
-                }
-                break;
-            case Action.Added:
-                for (let j = 0; j < change.c; j++) {
-                    const added = change.v[j].$;
-                    child = child.nextSibling as Element;
-                    if (child) {
-                        node.insertBefore(added, child.nextSibling);
-                    } else {
-                        node.appendChild(added);
-                    }
-                }
-                break;
-        }
-    }
-    elm._ = state._;
-    stack_pop();
+    
+    stack_pop(); // pop state from stack
 }
 
 /** Put text node */
-export function text(text: string) {
-    const node = seek_node(state, match_text, text);
-    state._.push(node ? node : { $: doc.createTextNode(text), t: text });
+export function text(str: string) {
+    if (str) { // when string is not empty
+        const node = seek_akin_node(state, match_text, is_text, update_text, str); // try to find same text node
+        state.$._.push(node ? node : { f: DomFlags.Text, $: create_text(doc, str), t: str });
+    }
 }
 
 /** Put comment node */
-export function comment(text: string) {
-    const node = seek_node(state, match_comment, text);
-    state._.push(node ? node : { $: doc.createComment(text), c: text });
+export function comment(str: string) {
+    const node = seek_akin_node(state, match_comment, is_comment, update_text, str);
+    state.$._.push(node ? node : { f: DomFlags.Comment, $: create_comment(doc, str), t: str });
 }
 
-/** Get current openned element */
-export function current(): DomFragment | DomElement {
+/** Get current opened element */
+export function current(): DomElement {
     return state.$;
 }
 
-/** Current element is newly created element */
-export function created(): boolean {
-    return !(state.$ as DomElement).n;
-}
-
-/** Current element reused */
-export function reused(): boolean {
-    return !created();
+/** Current opened element isn't attached */
+export function detached(): boolean {
+    return !((state.$ as DomBase<Node>).f && DomFlags.Attached);
 }
 
 /** Put immutable attribute */
@@ -284,13 +292,19 @@ export function ievent<E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) 
     add_event(elm.$, name, fn); // attach event listener to DOM element
 }
 
-export function patch<Args extends any[]>(fragment: DomFragment, render: (...args: Args) => void, ...args: Args) {
+/** Start patching of fragment */
+export function begin(elm: DomElement) {
     txnid ++;
-    stack.push({
-        $: fragment,
-        i: 0,
-        _: [],
-    });
-    render(...args);
-    stack.pop();
+    stack_push(elm);
 }
+
+/** Finish patching of fragment */
+export function end() {
+    stack_pop();
+}
+
+/*export function patch<Args extends any[]>(fragment: DomFragment, render: (...args: Args) => void, ...args: Args) {
+    begin(fragment);
+    render(...args);
+    end();
+}*/
