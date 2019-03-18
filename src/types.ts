@@ -14,12 +14,11 @@ export const enum DomFlags {
     Comment = 1 << 1,
     /** Element node */
     Element = 1 << 2,
-    /** Namespase element node */
-    Ns = 1 << 3,
+    
     /** Node is attached */
-    Attached = 1 << 4,
-    /** Node has text content */
-    HasText = 1 << 5,
+    Attached = 1 << 6,
+    /** Node marked to remove */
+    Removing = 1 << 7,
 }
 
 /** Basic node fields */
@@ -42,7 +41,7 @@ export interface DomComment extends DomBase<Comment> {
     t: string;
 }
 
-/** Single evement node */
+/** Single element node */
 export interface DomElement extends DomBase<Element> {
     /** Element selector */
     x: DomSelector;
@@ -56,16 +55,64 @@ export interface DomElement extends DomBase<Element> {
     _: DomNodes;
 }
 
+/** Sequence of nodes */
+export interface DomFragment extends DomBase<Element> {
+    /** Children nodes */
+    _: DomNodes;
+}
+
 /** Element selector */
 export interface DomSelector {
-    /** Tag name */
+    /**
+       Full element selector
+
+       Include: tag name, identifier, selector classes.
+       Exclude: key
+    */
+    //s: string;
+
+    /**
+       Element name space
+    */
+    n: DomNamespace,
+    
+    /**
+       Element tag name
+       
+       The name of tag in lower case.
+    */
     t: string;
-    /** Identifier (id attribute) */
+    
+    /**
+       Element identifier
+       
+       The value of attribute `id`.
+    */
     i?: string;
-    /** Classes (class attribute) */
+    
+    /**
+       Selector-specific classes
+       
+       Some part of value of attribute `class`.
+    */
     c?: DomClassSet;
-    /** Key (data-key attribute) */
+    
+    /**
+       Key
+
+       The unique key of element.
+
+       This value stored in `data-key` attribute.
+    */
     k?: string;
+}
+
+/** Namespaces */
+export const enum DomNamespace {
+    XHTML,
+    SVG,
+    XLINK,
+    XML,
 }
 
 /** Set of classes in selector */

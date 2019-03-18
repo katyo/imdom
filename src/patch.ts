@@ -1,8 +1,8 @@
 /** @module patch */
 
-import { DomTxnId, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomNodes, DomNode, DomFlags, DomBase } from './types';
-import { match_element, match_text, match_comment, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, insert_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './utils';
-import { Action, array_diff } from './diff';
+import { DomTxnId, DomNamespace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomNode, DomFlags, DomFragment } from './types';
+import { match_element, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, replace_node, insert_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './utils';
+import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 
 let doc: Document;
 
@@ -13,121 +13,117 @@ export function init(doc_: Document = document) {
 
 export interface State {
     // element
-    $: DomElement,
-    // current index
-    i: number;
-    // old children
-    _: DomNodes;
-    // old children usage
-    u: DomNodes;
+    $: DomElement | DomFragment,
+    // reconciler
+    r: Reconciler<DomNode>,
 }
 
 let stack: State[] = [];
 let state: State;
 let txnid: DomTxnId = 0;
 
-function stack_push(elm: DomElement) {
+function stack_push($: DomElement | DomFragment) {
     stack.push(state = {
-        $: elm, // place fragment or element at stack
-        i: 0, // set initial children pointer to 0
-        _: elm._, // place current children at state
-        u: elm._.slice(0),
+        $, // place fragment or element at stack
+        r: use_nodes($._),
     });
-    elm._ = []; // reset virtual element or fragment children
+}
+
+function is_attached(node: DomNode) {
+    return node.f & DomFlags.Attached;
+}
+
+function detach(node: DomNode) {
+    if (is_element(node) // when virtual node is element
+        && is_attached(node)) { // and virtual element is attached
+        node.f &= ~DomFlags.Attached; // mark element as detached
+    }
+}
+
+function attach(node: DomNode) {
+    if (is_element(node) // when virtual node is element
+        && !is_attached(node)) { // and virtual element is detached
+        node.f |= DomFlags.Attached; // mark element as attached
+    }
+}
+
+function replace(node: DomNode, rep: DomNode, parent: Node) {
+    detach(rep);
+    replace_node(parent, node.$, rep.$); // replace DOM node
+    attach(node);
+}
+
+function insert(node: DomNode, ref: DomNode, parent: Node) {
+    insert_node(parent, node.$, ref.$); // insert DOM node
+    attach(node);
+}
+
+function append(node: DomNode, parent: Node) {
+    append_node(parent, node.$); // append DOM node
+    attach(node);
+}
+
+function remove(node: DomNode, parent: Node) {
+    detach(node);
+    remove_node(parent, node.$); // remove DOM node
 }
 
 function stack_pop() {
-    const elm = state.$; // get current element from state
-    const node = elm.$ as HTMLElement; // get associated DOM element
-
-    if (elm.$ // when current element is parent
-        && (state._.length // and has new children
-            || elm._.length)) { // and has old children
-        let i = 0; // try get index of first child node from fragment offset
-        const changes = array_diff(state._, elm._); // compare children to get changes
-        //console.log(changes);
-        for (const change of changes) { // apply all changes to DOM children
-            switch (change.a) {
-                case Action.None: // when no changes
-                    i += change.c; // skip elements
-                    break;
-                case Action.Removed: // when nodes should been removed
-                    for (let j = 0; j < change.c; j++) {
-                        const removed = change.v[j]; // get virtual node to remove
-                        if (is_element(removed)) { // when virtual node is element
-                            if (removed.f & DomFlags.Attached) { // when virtual element is attached
-                                removed.f &= ~DomFlags.Attached; // mark virtual element as detached
-                            }
-                        }
-                        remove_node(node, removed.$); // remove DOM node from parent
-                    }
-                    break;
-                case Action.Added: // when nodes should been added
-                    for (let j = 0; j < change.c; j++, i++) {
-                        const added = change.v[j]; // get virtual node to add
-                        insert_node(node, added.$, i); // insert DOM node to parent
-                        if (is_element(added)) { // when virtual node is element
-                            if (!(added.f & DomFlags.Attached)) { // when virtual element is detached
-                                added.f |= DomFlags.Attached; // mark element as attached
-                            }
-                        }
-                    }
-                    break;
-            }
-        }
-    }
+    state.$._ = reconcile(state.r, replace, insert, append, remove, state.$.$); // reconcile children
     
     stack.pop(); // pop state from stack
     state = stack[stack.length - 1]; // update reference to current state
+}
 
-    if (state) { // when stack is not empty
-        state.$._.push(elm as DomNode); // append virtual element to children of vitrual parent
+function create_text_elm(str: string): DomText {
+    return {
+        $: create_text(doc, str),
+        f: DomFlags.Text,
+        t: str,
+    };
+}
+
+function create_comment_elm(str: string): DomComment {
+    return {
+        $: create_comment(doc, str),
+        f: DomFlags.Comment,
+        t: str,
+    };
+}
+
+function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => node is N, create: (ctx: Ctx) => N, update: (node: N, ctx: Ctx) => void, ctx: Ctx) {
+    let elm = reuse_node(state.r, match, ctx, false) as N | void; // try to reuse next node using match function
+
+    if (elm) {
+        update(elm, ctx);
+    } else { // when no node found
+        push_node(state.r, elm = create(ctx)); // create new node and push it
     }
 }
 
-function seek_same_node<N extends DomNode, Ctx>(state: State, match: (node: DomNode, ctx: Ctx) => node is N, ctx: Ctx): N | void {
-    let {i, u} = state;
-    for (; u.length; ) {
-        for (; i < u.length; i++) {
-            const node = u[i];
-            if (match(node, ctx)) {
-                u.splice(i, 1);
-                if (i >= u.length) state.i = 0;
-                return node;
-            }
-        }
-        if (state.i) {
-            i = 0;
-            continue;
-        }
-        return;
-    }
+/** Open html element */
+export function tag(tag: string, key?: string) {
+    open(DomNamespace.XHTML, tag, key);
 }
 
-function seek_akin_node<N extends DomNode, Ctx>(state: State, match: (node: DomNode, ctx: Ctx) => node is N, is: (node: DomNode, ctx: Ctx) => node is N, update: (node: N, ctx: Ctx) => void, ctx: Ctx): N | void {
-    let node = seek_same_node(state, match, ctx);
-    const {i, u} = state;
-    if (u.length && is(u[i], ctx)) {
-        update(node = u[i] as N, ctx);
-        u.splice(i, 1);
-        if (i >= u.length) state.i = 0;
-    }
-    return node;
+/** Open svg element */
+export function svg(tag: string, key?: string) {
+    open(DomNamespace.SVG, tag, key);
 }
 
-/** Open new element */
-export function open(tag: string, key?: string) {
+function open(ns: DomNamespace, tag: string, key?: string) {
     const sel = parse_selector(tag); // parse selector of opened element
+    
+    sel.n = ns; // set namespace
     
     if (key) { // when key is provided
         sel.k = key; // set key in selector
     }
     
-    let elm = seek_same_node(state, match_element, sel); // find virtual element usign selector
-
+    let elm = reuse_node(state.r, match_element, sel, true) as DomElement | void; // try to reuse existing child element using selector
+    
     if (!elm) { // when virtual element missing
-        // create new detached virtual element
-        elm = {
+        push_node(state.r, elm = { // create new virtual node
             f: DomFlags.Element,
             $: create_element(doc, sel),
             x: sel,
@@ -135,8 +131,8 @@ export function open(tag: string, key?: string) {
             c: {},
             s: {},
             _: []
-        };
-    } else if (!(elm.f && DomFlags.Attached)) { // when element is exists but not attached
+        });
+    } else if (!is_attached(elm)) { // when element is exists but not attached
         const cls = elm.x.c; // get classes from element selector
         
         if (cls) { // when element has classes in selector
@@ -154,32 +150,35 @@ export function open(tag: string, key?: string) {
     stack_push(elm);
 }
 
-/** Close openned element */
-export function close() {
+/** Close openned element or finalize patching */
+export function end() {
     const elm = state.$ as DomElement; // get current element from state
-    const node = elm.$ as HTMLElement; // get associated DOM element
 
-    // remove outdated attributes
-    for (const name in elm.a) {
-        if (elm.a[name].t < txnid) { // when attribute is not set in current transaction
-            delete elm.a[name]; // remove attribute entry from virtual element
-            remove_attr(node, name); // remove attribute from DOM element
+    if (elm.f & DomFlags.Element) { // when current subject is element
+        const node = elm.$ as HTMLElement; // get associated DOM element
+        
+        // remove outdated attributes
+        for (const name in elm.a) {
+            if (elm.a[name].t < txnid) { // when attribute is not set in current transaction
+                delete elm.a[name]; // remove attribute entry from virtual element
+                remove_attr(node, name); // remove attribute from DOM element
+            }
         }
-    }
 
-    // remove outdated classes
-    for (const name in elm.c) {
-        if (elm.c[name] < txnid) { // when class is not added in current transaction
-            delete elm.c[name]; // remove class entry from virtual element
-            remove_class(node, name); // remove class from DOM element
+        // remove outdated classes
+        for (const name in elm.c) {
+            if (elm.c[name] < txnid) { // when class is not added in current transaction
+                delete elm.c[name]; // remove class entry from virtual element
+                remove_class(node, name); // remove class from DOM element
+            }
         }
-    }
 
-    // remove outdated styles
-    for (const name in elm.s) {
-        if (elm.s[name].t < txnid) { // when style is not set in current transaction
-            delete elm.s[name]; // remove style entry from virtual element
-            remove_style(node, name); // remove style from DOM element
+        // remove outdated styles
+        for (const name in elm.s) {
+            if (elm.s[name].t < txnid) { // when style is not set in current transaction
+                delete elm.s[name]; // remove style entry from virtual element
+                remove_style(node, name); // remove style from DOM element
+            }
         }
     }
     
@@ -189,25 +188,28 @@ export function close() {
 /** Put text node */
 export function text(str: string) {
     if (str) { // when string is not empty
-        const node = seek_akin_node(state, match_text, is_text, update_text, str); // try to find same text node
-        state.$._.push(node ? node : { f: DomFlags.Text, $: create_text(doc, str), t: str });
+        push_text(is_text, create_text_elm, update_text, str); // push text node
     }
 }
 
 /** Put comment node */
 export function comment(str: string) {
-    const node = seek_akin_node(state, match_comment, is_comment, update_text, str);
-    state.$._.push(node ? node : { f: DomFlags.Comment, $: create_comment(doc, str), t: str });
+    push_text(is_comment, create_comment_elm, update_text, str); // push comment node
+}
+
+/** Get current opened element or fragment */
+export function current(): DomElement | DomFragment {
+    return state.$;
 }
 
 /** Get current opened element */
-export function current(): DomElement {
-    return state.$;
+export function element(): DomElement {
+    return state.$ as DomElement;
 }
 
 /** Current opened element isn't attached */
 export function detached(): boolean {
-    return !((state.$ as DomBase<Node>).f && DomFlags.Attached);
+    return !is_attached(state.$ as DomNode);
 }
 
 /** Put immutable attribute */
@@ -292,19 +294,12 @@ export function ievent<E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) 
     add_event(elm.$, name, fn); // attach event listener to DOM element
 }
 
-/** Start patching of fragment */
-export function begin(elm: DomElement) {
+/**
+   Start patching of fragment or element
+
+   Call `end()` to stop patching.
+*/
+export function patch(fragment: DomFragment) {
     txnid ++;
-    stack_push(elm);
+    stack_push(fragment);
 }
-
-/** Finish patching of fragment */
-export function end() {
-    stack_pop();
-}
-
-/*export function patch<Args extends any[]>(fragment: DomFragment, render: (...args: Args) => void, ...args: Args) {
-    begin(fragment);
-    render(...args);
-    end();
-}*/
