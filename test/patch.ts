@@ -1,5 +1,5 @@
 import { ok, strictEqual as se, notStrictEqual as nse } from 'assert';
-import { EMPTY_VALUE as _, DomElement, DomText, DomComment, parse, patch, end, tag, text, comment, class_ } from '../src/index';
+import { NULL as _, DomElement, DomText, DomComment, parse, patch, end, tag, text, comment, class_ } from '../src/index';
 
 describe('patch', () => {
     let elm: Element;

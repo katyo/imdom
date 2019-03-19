@@ -28,16 +28,21 @@ function replace(node: Node, rep: Node, list: Node[]) {
     list.splice(list.indexOf(rep), 1, node);
 }
 
-function insert(node: Node, ref: Node, list: Node[]) {
+function prepend(node: Node, ref: Node, list: Node[]) {
     remove_if_exists(node, list);
-    echo('insert', node, 'before', ref);
+    echo('prepend', node, 'before', ref);
     list.splice(list.indexOf(ref), 0, node);
 }
 
-function append(node: Node, list: Node[]) {
+function append(node: Node, ref: Node | undefined, list: Node[]) {
     remove_if_exists(node, list);
-    echo('append', node);
-    list.push(node);
+    if (ref) {
+        echo('append', node, 'after', ref);
+        list.splice(list.indexOf(ref) + 1, 0, node);
+    } else {
+        echo('append', node, 'at end');
+        list.push(node);
+    }
 }
 
 function remove(node: Node, list: Node[]) {
@@ -51,7 +56,7 @@ function remove_if_exists(node: Node, list: Node[]) {
 }
 
 function apply(state: Reconciler<Node>, nodes: Node[]) {
-    reconcile(state, replace, insert, append, remove, nodes);
+    reconcile(state, replace, prepend, append, remove, nodes);
 }
 
 describe('reconciler', () => {

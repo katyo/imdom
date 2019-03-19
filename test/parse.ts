@@ -1,5 +1,5 @@
 import { ok, strictEqual as se, deepStrictEqual as dse } from 'assert';
-import { EMPTY_VALUE as _, DomElement, DomNamespace, DomText, parse, DomFlags } from '../src/index';
+import { NULL as _, DomElement, DomNamespace, DomText, parse, DomFlags } from '../src/index';
 
 describe('parse', () => {
     describe('fragments', () => {

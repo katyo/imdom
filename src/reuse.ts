@@ -246,7 +246,7 @@ export function push_node<T>(state: Reconciler<T>, node: T) {
     }
 }
 
-export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T, ctx: X) => void, insert: (node: T, ref: T, ctx: X) => void, append: (node: T, ctx: X) => void, remove: (node: T, ctx: X) => void, ctx: X): T[] {
+export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T, ctx: X) => void, prepend: (node: T, ref: T, ctx: X) => void, append: (node: T, ref: T | undefined, ctx: X) => void, remove: (node: T, ctx: X) => void, ctx: X): T[] {
     // find heaviest reused segment to start optimization
 
     let i: number; // index of node
@@ -318,16 +318,14 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                         // when merged segment after heaviest segment
                         h.n ? // when we have next segment
                         h.n._[0] : // insert extra nodes before first node of segment after heaviest
-                        NULL;
+                        ( // when we haven't next element
+                            append(s._[--n]!, h._[h._.length - 1]!, ctx), // append last inserting node
+                            // exclude appended node from insertion
+                            s._[n]! // use last node as reference for prepending
+                        );
                     
-                    if (r) { // when we have reference node
-                        for (; i < n; i++) { // iterate over extra nodes to insert
-                            insert(s._[i], r, ctx); // insert extra node before reference
-                        }
-                    } else { // when we haven't reference node
-                        for (; i < n; i++) { // iterate over extra nodes to insert
-                            append(s._[i], ctx); // append extra node at end
-                        }
+                    for (; i < n; i++) { // iterate over extra nodes to insert
+                        prepend(s._[i], r, ctx); // insert extra node before reference
                     }
                 }
             }
@@ -342,7 +340,7 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
 
         // remove nodes from source segments which marked to remove
         for (c = state.s; c; c = c.n) {
-            if (is_remove(c)) {
+            if (is_remove(c)) { // when segment is marked to remove
                 for (i = 0; i < c._.length; i++) { // iterate over nodes to remove
                     remove(c._[i], ctx);
                 }
@@ -369,8 +367,10 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                 remove(s!._[i], ctx); // remove extra node
             }
         } else if (n > l) { // when we have extra destination nodes to append
+            append(a!._[--n], a!._[i - 1], ctx); // append last node to end
+            
             for (; i < n; i++) { // iterate over extra destination nodes
-                append(a!._[i], ctx); // append extra node
+                prepend(a!._[i], a!._[n], ctx); // prepend extra node
             }
         }
     }

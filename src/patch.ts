@@ -1,7 +1,7 @@
 /** @module patch */
 
 import { DomTxnId, DomNamespace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomNode, DomFlags, DomFragment } from './types';
-import { match_element, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, replace_node, insert_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './utils';
+import { match_element, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event, NULL } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 
 let doc: Document;
@@ -53,13 +53,13 @@ function replace(node: DomNode, rep: DomNode, parent: Node) {
     attach(node);
 }
 
-function insert(node: DomNode, ref: DomNode, parent: Node) {
-    insert_node(parent, node.$, ref.$); // insert DOM node
+function prepend(node: DomNode, ref: DomNode, parent: Node) {
+    prepend_node(parent, node.$, ref.$); // prepend DOM node
     attach(node);
 }
 
-function append(node: DomNode, parent: Node) {
-    append_node(parent, node.$); // append DOM node
+function append(node: DomNode, ref: DomNode | undefined, parent: Node) {
+    append_node(parent, node.$, ref ? ref.$ : NULL); // append DOM node
     attach(node);
 }
 
@@ -69,7 +69,7 @@ function remove(node: DomNode, parent: Node) {
 }
 
 function stack_pop() {
-    state.$._ = reconcile(state.r, replace, insert, append, remove, state.$.$); // reconcile children
+    state.$._ = reconcile(state.r, replace, prepend, append, remove, state.$.$); // reconcile children
     
     stack.pop(); // pop state from stack
     state = stack[stack.length - 1]; // update reference to current state

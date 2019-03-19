@@ -210,15 +210,20 @@ export function replace_node(parent: Node, other: Node, child: Node) {
 }
 
 /** Insert child DOM node to parent DOM node before other child DOM node */
-export function insert_node(parent: Node, child: Node, other: Node) {
+export function prepend_node(parent: Node, child: Node, other: Node) {
     trace('insert node', child, 'to', parent, 'before', other);
     parent.insertBefore(child, other);
 }
 
-/** Append child DOM node to parent DOM node after other child DOM nodes */
-export function append_node(parent: Node, child: Node) {
-    trace('append node', child, 'to', parent);
-    parent.appendChild(child);
+/** Insert child DOM node to parent DOM node after other child DOM node */
+export function append_node(parent: Node, child: Node, other: Node | undefined = NULL) {
+    if (other && other.nextSibling) {
+        trace('insert node', child, 'to', parent, 'after', other);
+        parent.insertBefore(child, other.nextSibling);
+    } else {
+        trace('append node', child, 'to', parent);
+        parent.appendChild(child);
+    }
 }
 
 /** Remove child DOM node from parent DOM node */
