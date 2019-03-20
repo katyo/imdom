@@ -219,6 +219,29 @@ describe('reconciler', () => {
                     apply(state, nodes);
                     dse(nodes, [6, 7]);
                 });
+
+                it('first and last', () => {
+                    const node1 = reuse_node(state, match, 1, true);
+                    const node2 = reuse_node(state, match, 7, true);
+                    
+                    ok(node1);
+                    se(node1, 1);
+                    ok(node2);
+                    se(node2, 7);
+                    se(nth(state, 0)!.t, Op.Update);
+                    dse(nth(state, 0)!._, [1]);
+                    se(nth(state, 1)!.t, Op.Remove);
+                    dse(nth(state, 1)!._, [2, 3, 4, 5, 6]);
+                    se(nth(state, 2)!.t, Op.Update);
+                    dse(nth(state, 2)!._, [7]);
+                    se(nth(state, 3), void 0);
+                    se(lth(state, 0), nth(state, 0));
+                    se(lth(state, 1), nth(state, 2));
+                    se(lth(state, 2), void 0);
+
+                    apply(state, nodes);
+                    dse(nodes, [1, 7]);
+                });
             });
 
             describe('backward', () => {
@@ -292,6 +315,29 @@ describe('reconciler', () => {
                     apply(state, nodes);
                     dse(nodes, [7, 6]);
                 });
+
+                it('last and first', () => {
+                    const node1 = reuse_node(state, match, 7, true);
+                    const node2 = reuse_node(state, match, 1, true);
+                    
+                    ok(node1);
+                    se(node1, 7);
+                    ok(node2);
+                    se(node2, 1);
+                    se(nth(state, 0)!.t, Op.Update);
+                    dse(nth(state, 0)!._, [1]);
+                    se(nth(state, 1)!.t, Op.Remove);
+                    dse(nth(state, 1)!._, [2, 3, 4, 5, 6]);
+                    se(nth(state, 2)!.t, Op.Update);
+                    dse(nth(state, 2)!._, [7]);
+                    se(nth(state, 3), void 0);
+                    se(lth(state, 0), nth(state, 2));
+                    se(lth(state, 1), nth(state, 0));
+                    se(lth(state, 2), void 0);
+
+                    apply(state, nodes);
+                    dse(nodes, [7, 1]);
+                });
             });
         });
     });
@@ -350,6 +396,25 @@ describe('reconciler', () => {
                 dse(nodes, [2, 8]);
             });
 
+            it('insert before last reuse', () => {
+                push_node(state, 8);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Remove);
+                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6]);
+                se(nth(state, 1)!.t, Op.Update);
+                dse(nth(state, 1)!._, [7]);
+                se(nth(state, 2), void 0);
+
+                se(lth(state, 0)!.t, Op.Insert);
+                dse(lth(state, 0)!._, [8]);
+                se(lth(state, 1), nth(state, 1));
+                se(lth(state, 2), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [8, 7]);
+            });
+
             it('insert after last reuse', () => {
                 reuse_node(state, match, 7, true);
                 push_node(state, 8);
@@ -359,6 +424,7 @@ describe('reconciler', () => {
                 se(nth(state, 1)!.t, Op.Update);
                 dse(nth(state, 1)!._, [7]);
                 se(nth(state, 2), void 0);
+                
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8]);
@@ -444,6 +510,227 @@ describe('reconciler', () => {
 
                 apply(state, nodes);
                 dse(nodes, [6, 7, 8, 9]);
+            });
+
+            it('insert single in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 3, true);
+                push_node(state, 8);
+                reuse_node(state, match, 4, true);
+                reuse_node(state, match, 5, true);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2, 3]);
+                se(nth(state, 1)!.t, Op.Update);
+                dse(nth(state, 1)!._, [4, 5, 6, 7]);
+                se(nth(state, 2), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 2), nth(state, 1));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 3, 8, 4, 5, 6, 7]);
+            });
+
+            it('insert twice in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 3, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 4, true);
+                reuse_node(state, match, 5, true);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2, 3]);
+                se(nth(state, 1)!.t, Op.Update);
+                dse(nth(state, 1)!._, [4, 5, 6, 7]);
+                se(nth(state, 2), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 2), nth(state, 1));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 3, 8, 9, 4, 5, 6, 7]);
+            });
+
+            it('replace single in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 3, true);
+                push_node(state, 8);
+                reuse_node(state, match, 5, true);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2, 3]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [4]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [5, 6, 7]);
+                se(nth(state, 3), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 2), nth(state, 2));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 3, 8, 5, 6, 7]);
+            });
+
+            it('replace twice in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 3, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2, 3]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [4, 5]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [6, 7]);
+                se(nth(state, 3), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 2), nth(state, 2));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 3, 8, 9, 6, 7]);
+            });
+
+            it('remove single and replace twice in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [3, 4, 5]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [6, 7]);
+                se(nth(state, 3), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 2), nth(state, 2));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 8, 9, 6, 7]);
+            });
+
+            it('replace and insert in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 3, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 5, true);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2, 3]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [4]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [5, 6, 7]);
+                se(nth(state, 3), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1)!.t, Op.Insert);
+                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 2), nth(state, 2));
+                se(lth(state, 3), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 3, 8, 9, 5, 6, 7]);
+            });
+            
+            it('move single and replace twice in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 5, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 6, true);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [3, 4]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [5]);
+                se(nth(state, 3)!.t, Op.Update);
+                dse(nth(state, 3)!._, [6, 7]);
+                se(nth(state, 4), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1), nth(state, 2));
+                se(lth(state, 2)!.t, Op.Insert);
+                dse(lth(state, 2)!._, [8, 9]);
+                se(lth(state, 3), nth(state, 3));
+                se(lth(state, 4), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 5, 8, 9, 6, 7]);
+            });
+
+            it('move twice and replace twice in the middle', () => {
+                reuse_node(state, match, 1, true);
+                reuse_node(state, match, 2, true);
+                reuse_node(state, match, 5, true);
+                reuse_node(state, match, 6, true);
+                push_node(state, 8);
+                push_node(state, 9);
+                reuse_node(state, match, 7, true);
+
+                se(nth(state, 0)!.t, Op.Update);
+                dse(nth(state, 0)!._, [1, 2]);
+                se(nth(state, 1)!.t, Op.Remove);
+                dse(nth(state, 1)!._, [3, 4]);
+                se(nth(state, 2)!.t, Op.Update);
+                dse(nth(state, 2)!._, [5, 6]);
+                se(nth(state, 3)!.t, Op.Update);
+                dse(nth(state, 3)!._, [7]);
+                se(nth(state, 4), void 0);
+
+                se(lth(state, 0), nth(state, 0));
+                se(lth(state, 1), nth(state, 2));
+                se(lth(state, 2)!.t, Op.Insert);
+                dse(lth(state, 2)!._, [8, 9]);
+                se(lth(state, 3), nth(state, 3));
+                se(lth(state, 4), void 0);
+
+                apply(state, nodes);
+                dse(nodes, [1, 2, 5, 6, 8, 9, 7]);
             });
         });
     });

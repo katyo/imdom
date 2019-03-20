@@ -1,7 +1,7 @@
 /** @module patch */
 
-import { DomTxnId, DomNamespace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomNode, DomFlags, DomFragment } from './types';
-import { match_element, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event, NULL } from './utils';
+import { DomTxnId, DomNamespace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomNode, DomFlags, DomFragment, DomKey } from './types';
+import { is_defined, match_element, is_element, is_text, is_comment, parse_selector, create_element, create_text, create_comment, update_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event, NULL } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 
 let doc: Document;
@@ -101,22 +101,18 @@ function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => n
     }
 }
 
-/** Open html element */
-export function tag(tag: string, key?: string) {
-    open(DomNamespace.XHTML, tag, key);
-}
-
-/** Open svg element */
-export function svg(tag: string, key?: string) {
-    open(DomNamespace.SVG, tag, key);
-}
-
-function open(ns: DomNamespace, tag: string, key?: string) {
+/** Open new child element */
+export function tag(tag: string, key?: DomKey) {
     const sel = parse_selector(tag); // parse selector of opened element
     
-    sel.n = ns; // set namespace
+    if (sel.t == 'svg') { // when tag is 'svg'
+        sel.n = DomNamespace.SVG; // set SVG namespace
+    } else if (is_element(state.$ as DomNode) // when we have parent element
+               && (state.$ as DomElement).x.t != 'foreignObject') { // which is not a foreign object
+        sel.n = (state.$ as DomElement).x.n; // set namespace from parent
+    }
     
-    if (key) { // when key is provided
+    if (is_defined(key)) { // when key is provided
         sel.k = key; // set key in selector
     }
     
@@ -207,8 +203,12 @@ export function element(): DomElement {
     return state.$ as DomElement;
 }
 
-/** Current opened element isn't attached */
-export function detached(): boolean {
+/**
+   Current opened element is brand new
+
+   It means that element is been created or reused from parsed document.
+*/
+export function once(): boolean {
     return !is_attached(state.$ as DomNode);
 }
 

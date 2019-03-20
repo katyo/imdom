@@ -104,8 +104,11 @@ export interface DomSelector {
 
        This value stored in `data-key` attribute.
     */
-    k?: string;
+    k?: DomKey;
 }
+
+/** Key type */
+export type DomKey = string | number;
 
 /** Namespaces */
 export const enum DomNamespace {

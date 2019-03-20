@@ -178,7 +178,7 @@ function parse_ns_uri(ns: string | null): DomNamespace | undefined {
 
 /** Create new DOM element node */
 export function create_element(doc: Document, sel: DomSelector): Element {
-    const node = sel.n ? doc.createElement(sel.t) : // create DOM element node
+    const node = !sel.n ? doc.createElement(sel.t) : // create DOM element node
         doc.createElementNS(ns_uri_map[sel.n] as string, sel.t); // create DOM element node with namespace
     
     if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present

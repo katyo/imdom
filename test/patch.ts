@@ -1,5 +1,5 @@
-import { ok, strictEqual as se, notStrictEqual as nse } from 'assert';
-import { NULL as _, DomElement, DomText, DomComment, parse, patch, end, tag, text, comment, class_ } from '../src/index';
+import { ok, strictEqual as se, notStrictEqual as nse, notEqual as ne } from 'assert';
+import { NULL as _, DomElement, DomText, DomComment, parse, patch, end, tag, text, once, comment, iattr, class_ } from '../src/index';
 
 describe('patch', () => {
     let elm: Element;
@@ -137,67 +137,96 @@ describe('patch', () => {
                 tag('div');
                 end();
                 end();
+                
                 const n1 = vdom.$.firstChild as Element;
+                
                 se(n1.tagName, 'DIV');
             });
+            
             it('has different tag and id', () => {
                 const elm1 = document.createElement('div');
+                
                 elm.appendChild(elm1);
                 vdom = parse(elm);
                 patch(vdom);
                 tag('span#id');
                 end();
                 end();
+                
                 const n1 = elm.firstChild as Element;
+                
                 ok(n1);
                 se(n1.tagName, 'SPAN');
                 se(n1.id, 'id');
             });
+            
             it('has id', () => {
                 patch(vdom);
                 tag('div#unique');
                 end();
                 end();
+                
                 const n1 = elm.firstChild as Element;
+                
                 ok(n1);
                 se(n1.id, 'unique');
             });
-            /*it('has correct namespace', () => {
-                var SVGNamespace = 'http://www.w3.org/2000/svg';
-                var XHTMLNamespace = 'http://www.w3.org/1999/xhtml';
-
-                elm = patch(vnode0, h('div', [h('div', {ns: SVGNamespace})])).elm;
-                assert.equal(elm.firstChild.namespaceURI, SVGNamespace);
+            
+            it('has correct namespace', () => {
+                const SVGNamespace = 'http://www.w3.org/2000/svg';
+                const XHTMLNamespace = 'http://www.w3.org/1999/xhtml';
 
                 // verify that svg tag automatically gets svg namespace
-                elm = patch(vnode0, h('svg', [
-                    h('foreignObject', [
-                        h('div', ['I am HTML embedded in SVG'])
-                    ])
-                ])).elm;
-                assert.equal(elm.namespaceURI, SVGNamespace);
-                assert.equal(elm.firstChild.namespaceURI, SVGNamespace);
-                assert.equal(elm.firstChild.firstChild.namespaceURI, XHTMLNamespace);
-
+                patch(vdom);
+                tag('svg');
+                tag('foreignObject');
+                tag('div');
+                text('I am HTML embedded in SVG');
+                end();
+                end();
+                end();
+                end();
+                
+                const n1 = elm.firstChild as Element;
+                
+                se(n1.namespaceURI, SVGNamespace);
+                se(n1.firstChild!.namespaceURI, SVGNamespace);
+                se(n1.firstChild!.firstChild!.namespaceURI, XHTMLNamespace);
+                
                 // verify that svg tag with extra selectors gets svg namespace
-                elm = patch(vnode0, h('svg#some-id')).elm;
-                assert.equal(elm.namespaceURI, SVGNamespace);
-
+                patch(vdom);
+                tag('svg#some-id');
+                end();
+                end();
+                
+                se(elm.firstChild!.namespaceURI, SVGNamespace);
+                
                 // verify that non-svg tag patchning with 'svg' does NOT get namespace
-                elm = patch(vnode0, h('svg-custom-el')).elm;
-                assert.notEqual(elm.namespaceURI, SVGNamespace);
-            });*/
+                patch(vdom);
+                tag('svg-custom-el');
+                end();
+                end();
+                
+                ne(elm.firstChild!.namespaceURI, SVGNamespace);
+            });
+            
             it('receives classes in selector', () => {
                 patch(vdom);
                 tag('i.am.a.class');
                 end();
                 end();
-                const n1 = elm.firstChild as Element;
+                
+                const n1 = (elm.firstChild as Element);
+                
                 ok(n1);
-                ok(n1.classList.contains('am'));
-                ok(n1.classList.contains('a'));
-                ok(n1.classList.contains('class'));
+
+                const cls = n1.classList;
+                
+                ok(cls.contains('am'));
+                ok(cls.contains('a'));
+                ok(cls.contains('class'));
             });
+            
             it('receives classes in class property', () => {
                 patch(vdom);
                 tag('i');
@@ -206,52 +235,104 @@ describe('patch', () => {
                 class_('class');
                 end();
                 end();
-                const n1 = elm.firstChild as Element;
-                ok(n1.classList.contains('am'));
-                ok(n1.classList.contains('a'));
-                ok(n1.classList.contains('class'));
-                ok(!n1.classList.contains('not'));
+                
+                const cls = (elm.firstChild! as Element).classList;
+                
+                ok(cls.contains('am'));
+                ok(cls.contains('a'));
+                ok(cls.contains('class'));
+                ok(!cls.contains('not'));
             });
-            /*
+            
             it('receives classes in selector when namespaced', () => {
-                elm = patch(vnode0,
-                            h('svg', [
-                                h('g.am.a.class.too')
-                            ])
-                           ).elm;
-                assert(elm.firstChild.classList.contains('am'));
-                assert(elm.firstChild.classList.contains('a'));
-                assert(elm.firstChild.classList.contains('class'));
+                patch(vdom);
+                tag('svg');
+                tag('g.am.a.class.too');
+                end();
+                end();
+                end();
+
+                const cls = (elm.firstChild!.firstChild! as Element).classList;
+                
+                ok(cls.contains('am'));
+                ok(cls.contains('a'));
+                ok(cls.contains('class'));
             });
+
             it('receives classes in class property when namespaced', () => {
-                elm = patch(vnode0,
-                            h('svg', [
-                                h('g', {class: {am: true, a: true, class: true, not: false, too: true}})
-                            ])
-                           ).elm;
-                assert(elm.firstChild.classList.contains('am'));
-                assert(elm.firstChild.classList.contains('a'));
-                assert(elm.firstChild.classList.contains('class'));
-                assert(!elm.firstChild.classList.contains('not'));
+                patch(vdom);
+                tag('svg');
+                tag('g');
+                class_('am');
+                class_('a');
+                class_('class');
+                if (0) {
+                    class_('not');
+                }
+                class_('too');
+                end();
+                end();
+                end();
+
+                const cls = (elm.firstChild!.firstChild as Element).classList;
+                
+                ok(cls.contains('am'));
+                ok(cls.contains('a'));
+                ok(cls.contains('class'));
+                ok(!cls.contains('not'));
             });
+            
             it('handles classes from both selector and property', () => {
-                elm = patch(vnode0, h('div', [h('i.has', {class: {classes: true}})])).elm;
-                assert(elm.firstChild.classList.contains('has'));
-                assert(elm.firstChild.classList.contains('classes'));
+                patch(vdom);
+                tag('div');
+                tag('i.has');
+                class_('classes');
+                end();
+                end();
+                end();
+
+                const cls = (elm.firstChild!.firstChild as Element).classList;
+                
+                ok(cls.contains('has'));
+                ok(cls.contains('classes'));
             });
+            
             it('can create elements with text content', () => {
-                elm = patch(vnode0, h('div', ['I am a string'])).elm;
-                assert.equal(elm.innerHTML, 'I am a string');
+                patch(vdom);
+                tag('div');
+                text('I am a string');
+                end();
+                end();
+                
+                se((elm.firstChild as HTMLElement).innerHTML, 'I am a string');
             });
+            
             it('can create elements with span and text content', () => {
-                elm = patch(vnode0, h('a', [h('span'), 'I am a string'])).elm;
-                assert.equal(elm.childNodes[0].tagName, 'SPAN');
-                assert.equal(elm.childNodes[1].textContent, 'I am a string');
+                patch(vdom);
+                tag('a');
+                tag('span');
+                end();
+                text('I am a string');
+                end();
+                end();
+                
+                se((elm.firstChild!.childNodes[0] as Element).tagName, 'SPAN');
+                se(elm.firstChild!.childNodes[1].textContent, 'I am a string');
             });
-            it('can create elements with props', () => {
-                elm = patch(vnode0, h('a', {props: {src: 'http://localhost/'}})).elm;
-                assert.equal(elm.src, 'http://localhost/');
+            
+            it('can create elements with attrs', () => {
+                patch(vdom);
+                tag('a');
+                if (once()) {
+                    iattr('href', 'http://localhost/');
+                }
+                end();
+                end();
+                
+                se((elm.firstChild as Element).getAttribute('href'), 'http://localhost/');
             });
+
+            /*
             it('can create an element created inside an iframe', done => {
                 // Only run if srcdoc is supported.
                 var frame = document.createElement('iframe');
@@ -268,24 +349,215 @@ describe('patch', () => {
                     done();
                 }
             });
-            it('is a patch of the root element', () => {
-                var elmWithIdAndClass = document.createElement('div');
-                elmWithIdAndClass.id = 'id';
-                elmWithIdAndClass.className = 'class';
-                elmWithIdAndClass.dataset.sel = '#.';
-                var vnode1 = h('div#id.class', [h('span', 'Hi')]);
-                elm = patch(read(elmWithIdAndClass), vnode1).elm;
-                assert.strictEqual(elm, elmWithIdAndClass);
-                assert.equal(elm.tagName, 'DIV');
-                assert.equal(elm.id, 'id');
-                assert.equal(elm.className, 'class');
-            });
-            it('can create comments', () => {
-                elm = patch(vnode0, h('!', 'test')).elm;
-                assert.equal(elm.nodeType, document.COMMENT_NODE);
-                assert.equal(elm.textContent, 'test');
-            });
             */
+            
+            it('is a patch of the root element', () => {
+                patch(vdom);
+                if (once()) {
+                    iattr('id', 'some-id');
+                }
+                tag('span');
+                text('Hi');
+                end();
+                end();
+                
+                se(elm, vdom.$);
+                se(elm.tagName, 'DIV');
+                se(elm.id, 'some-id');
+            });
+            
+            it('can create comments', () => {
+                patch(vdom);
+                comment('test');
+                end();
+                
+                se(elm.firstChild!.nodeType, document.COMMENT_NODE);
+                se(elm.firstChild!.textContent, 'test');
+            });
+        });
+
+        describe('patching an element', () => {
+            it('can remove some children of the root element', () => {
+                const h2 = document.createElement('h2');
+                h2.textContent = 'Hello'
+                
+                const t = document.createTextNode('Foobar');
+                
+                elm.appendChild(t);
+                elm.appendChild(h2);
+                
+                vdom = parse(elm);
+                
+                patch(vdom);
+                text('Foobar');
+                end();
+
+                se(elm.childNodes.length, 1);
+                se(elm.childNodes[0].nodeType, 3);
+                se((elm.childNodes[0] as Text).wholeText, 'Foobar');
+                se(elm.childNodes[0], t);
+            });
+            
+            it('can remove text elements', () => {
+                const h2 = document.createElement('h2');
+                h2.textContent = 'Hello'
+                
+                const t = document.createTextNode('Foobar');
+                
+                elm.appendChild(t);
+                elm.appendChild(h2);
+
+                vdom = parse(elm);
+
+                patch(vdom);
+                tag('h2');
+                text('Hello');
+                end();
+                end();
+                
+                se(elm.childNodes.length, 1);
+                se(elm.childNodes[0].nodeType, 1);
+                se(elm.childNodes[0].textContent, 'Hello');
+                se(elm.childNodes[0], h2);
+            });
+        });
+        
+        describe('updating children with keys', () => {
+            function spanNum(n: string | number | void) {
+                if (typeof n == 'string') {
+                    tag('span');
+                    text(n);
+                    end();
+                } else if (n != null) {
+                    tag('span', n);
+                    text('' + n);
+                    end();
+                }
+            }
+            
+            describe('addition of elements', () => {
+                it('appends elements', () => {
+                    patch(vdom);
+                    for (let i = 0; i < 1; i++) spanNum(i + 1);
+                    end();
+                    
+                    se(elm.children.length, 1);
+                    
+                    patch(vdom);
+                    for (let i = 0; i < 3; i++) spanNum(i + 1);
+                    end();
+                    
+                    se(elm.children.length, 3);
+                    for (let i = 0; i < 3; i++) se(elm.children[i].innerHTML, `${i + 1}`);
+                });
+                
+                it('prepends elements', () => {
+                    patch(vdom);
+                    for (let i = 3; i < 5; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 2);
+
+                    patch(vdom);
+                    for (let i = 0; i < 5; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 5);
+                    for (let i = 0; i < 5; i++) se(elm.children[i].innerHTML, `${i + 1}`);
+                });
+                
+                it('add elements in the middle', () => {
+                    patch(vdom);
+                    for (let i = 0; i < 2; i++) spanNum(i + 1);
+                    for (let i = 3; i < 5; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 4);
+                    
+                    patch(vdom);
+                    for (let i = 0; i < 5; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 5);
+                    for (let i = 0; i < 5; i++) se(elm.children[i].innerHTML, `${i + 1}`);
+                });
+                
+                it('add elements at begin and end', function() {
+                    patch(vdom);
+                    for (let i = 1; i < 4; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 3);
+
+                    patch(vdom);
+                    for (let i = 0; i < 5; i++) spanNum(i + 1);
+                    end();
+
+                    se(elm.children.length, 5);
+                    for (let i = 0; i < 5; i++) se(elm.children[i].innerHTML, `${i + 1}`);
+                });
+                
+                it('adds children to parent with no children', () => {
+                    patch(vdom);
+                    tag('span', 'span');
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 0);
+                    
+                    patch(vdom);
+                    tag('span', 'span');
+                    for (let i = 0; i < 3; i++) spanNum(i + 1);
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 3);
+                    for (let i = 0; i < 3; i++) se((elm.firstChild as Element).children[i].innerHTML, `${i + 1}`);
+                });
+                
+                it('removes all children from parent', function() {
+                    patch(vdom);
+                    tag('span', 'span');
+                    for (let i = 0; i < 3; i++) spanNum(i + 1);
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 3);
+                    for (let i = 0; i < 3; i++) se((elm.firstChild as Element).children[i].innerHTML, `${i + 1}`);
+                    
+                    patch(vdom);
+                    tag('span', 'span');
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 0);
+                });
+                
+                it('update one child with same key but different sel', function() {
+                    patch(vdom);
+                    tag('span', 'span');
+                    for (let i = 0; i < 3; i++) spanNum(i + 1);
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 3);
+                    for (let i = 0; i < 3; i++) se((elm.firstChild as Element).children[i].innerHTML, `${i + 1}`);
+
+                    patch(vdom);
+                    tag('span', 'span');
+                    spanNum(1);
+                    tag('i', 2);
+                    text('2');
+                    end();
+                    spanNum(3);
+                    end();
+                    end();
+
+                    se((elm.firstChild as Element).children.length, 3);
+                    for (let i = 0; i < 3; i++) se((elm.firstChild as Element).children[i].innerHTML, `${i + 1}`);
+                    se((elm.firstChild as Element).children[1].tagName, 'I');
+                });
+            });
         });
     });
 });

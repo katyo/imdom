@@ -140,7 +140,10 @@ export function use_nodes<T>(nodes: T[]): Reconciler<T> {
 */
 function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
     const {
-        p, // previous segment
+        b, // last destination segment
+    } = state;
+    
+    const {
         _, // segment nodes
         _: {
             length: l // number of segment nodes
@@ -169,10 +172,11 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
             ), d); // append end segment to new
         }
     } else { // when node is first
-        if (p // when has previous segment
-            && is_update(p) // which is reusing
+        if (b // when has last destination segment
+            && is_update(b) // and which is reusing
+            && b.n == c // and next source is current segment
            ) {
-            p._.push(c._.shift()!); // simply move node to previous segment
+            b._.push(_.shift()!); // simply move node to previous destination segment
             
             if (l < 2) { // when only one node in segment
                 remove_src(state, c); // remove current segment
@@ -250,6 +254,7 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
     // find heaviest reused segment to start optimization
 
     let i: number; // index of node
+    let j: number; // helper index
     let d: number; // number of source nodes to remove
     let n: number; // number of destination nodes to insert
     let l: number; // number of overlapped nodes
@@ -266,6 +271,8 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
     }
 
     if (h) { // when heaviest reused segment found
+        const h_ = h._;
+        
         for (;;) {
             const {
                 b, // previous destination segment
@@ -278,64 +285,77 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
             
             if (!s) break; // nothing to merge, break loop
 
+            const s_ = s._; // segment nodes
+            const p = s == b; // when segment is before heaviest destination segment
+            const u = is_update(s); // segment is for update
+            
             i = 0; // initialize index of node
-            n = s._.length; // number of nodes to insert
+            n = s_.length; // number of nodes to insert
             l = 0; // no overlapped nodes
             
-            if (!(is_update(s) && (b == s ? h.p == s : h.n == s))) { // when segment doesn't already merged by previous operations
-                const o = s == b ? h.p : h.n; // get source segment
+            if (!(u && (p ? h.p == s : h.n == s))) { // when segment doesn't already merged by previous operations
+                const o = p ? h.p : h.n; // get source segment
                 
                 if (o && is_remove(o)) { // when source segment marked to remove
-                    // we intend to replace overlapped nodes
-                    d = o._.length; // number of nodes to remove
-                    l = Math.min(d, n); // number of overlapped nodes
-                    
                     let o_ = o._; // get nodes to remove
                     
-                    if (d > l) { // when we have extra nodes to remove
-                        if (s == b) { // when merged segment before heaviest segment
-                            // cut nodes from tail
-                            o._ = o_.slice(0, l);
-                            o_ = o_.slice(l);
-                        } else { // when merged segment after heaviest segment
-                            // cut nodes from head
-                            o._ = o_.slice(l);
-                            //o_ = o_.slice(0, l); // <-- no effect
+                    if (u && p ? o.p == s : o.n == s) { // when reused nodes previous or next of removed
+                        for (i = 0; i < o_.length; i++) { // iterate over nodes to remove
+                            remove(o_[i], ctx); // remove segment node
                         }
-                    } else {
+                        
                         remove_src(state, o); // remove empty segment
-                    }
-                    
-                    for (; i < l; i++) { // iterate over overlapped nodes
-                        replace(s._[i], o_[i], ctx); // replace overlapped node
+                        n = 0; // we doesn't need insert nodes now
+                    } else {
+                        // we intend to replace overlapped nodes
+                        d = o._.length; // number of nodes to remove
+                        l = Math.min(d, n); // number of overlapped nodes
+                        
+                        if (d > l) { // when we have extra nodes to remove
+                            if (p) { // when merged segment before heaviest segment
+                                // cut nodes from tail
+                                o._ = o_.slice(0, j = d - l);
+                                o_ = o_.slice(j);
+                            } else { // when merged segment after heaviest segment
+                                // cut nodes from head
+                                o._ = o_.slice(l);
+                                //o_ = o_.slice(0, l); // <-- no effect
+                            }
+                        } else {
+                            remove_src(state, o); // remove empty segment
+                        }
+                        
+                        for (; i < l; i++) { // iterate over overlapped nodes
+                            replace(s_[i], o_[i], ctx); // replace overlapped node
+                        }
                     }
                 }
 
-                if (n > l) { // when we have extra nodes to insert
+                if (n > l) { // when we have extra nodes to insert                    
                     // reference node to insert before
-                    const r = s == b ? // when merged segment before heaviest segment
-                        h._[0] : // insert extra nodes before first node of heaviest segment
+                    const r = p ? // when merged segment before heaviest segment
+                        h_[0] : // insert extra nodes before first node of heaviest segment
                         // when merged segment after heaviest segment
                         h.n ? // when we have next segment
                         h.n._[0] : // insert extra nodes before first node of segment after heaviest
                         ( // when we haven't next element
-                            append(s._[--n]!, h._[h._.length - 1]!, ctx), // append last inserting node
+                            append(s_[--n]!, h_[h_.length - 1], ctx), // append last inserting node
                             // exclude appended node from insertion
-                            s._[n]! // use last node as reference for prepending
+                            s_[n]! // use last node as reference for prepending
                         );
                     
                     for (; i < n; i++) { // iterate over extra nodes to insert
-                        prepend(s._[i], r, ctx); // insert extra node before reference
+                        prepend(s_[i], r, ctx); // insert extra node before reference
                     }
                 }
             }
             
-            if (is_update(s)) { // when segment is in source
+            if (u) { // when segment is in source
                 remove_src(state, s); // remove merged source segment
             }
             remove_dst(state, s); // remove merged destination segment
-            
-            h._.splice(s == b ? 0 : h._.length, 0, ...s._); // merge nodes of segments
+
+            h_.splice(p ? 0 : h_.length, 0, ...s_); // merge nodes of segments
         }
 
         // remove nodes from source segments which marked to remove
