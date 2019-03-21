@@ -1,0 +1,47 @@
+{
+  "name": "babel-plugin-transform-imdom-jsx",
+  "version": "0.1.0",
+  "description": "Turn JSX into ImDom function calls",
+  "repository": "https://github.com/katyo/imdom/tree/master/jsx",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "babel src --out-dir . --source-maps",
+    "watch": "babel src --out-dir . --source-maps --watch",
+    "test_": "mocha -r @babel/register test/index.js -R spec",
+    "test": "jest"
+  },
+  "main": "index.js",
+  "keywords": [
+    "babel-plugin",
+    "virtual-dom",
+    "jsx"
+  ],
+  "jest": {
+    "modulePathIgnorePatterns": [
+      "/test/fixtures/"
+    ],
+    "testEnvironment": "node",
+    "testRegex": "./test/.+\\.js$"
+  },
+  "dependencies": {
+    "@babel/helper-plugin-utils": "^7",
+    "@babel/plugin-syntax-jsx": "^7",
+    "@babel/types": "^7.4.0"
+  },
+  "peerDependencies": {
+    "@babel/core": "^7.0.0-0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7",
+    "@babel/core": "^7.4.0",
+    "@babel/helper-plugin-test-runner": "^7",
+    "@babel/preset-env": "^7.4.1",
+    "@babel/register": "^7.4.0",
+    "babel-jest": "^24",
+    "jest": "^24"
+  }
+}

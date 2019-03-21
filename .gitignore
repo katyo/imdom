@@ -4,10 +4,10 @@ node_modules/
 es/
 .lws/
 *.js
+!jsx/{src,test}/**/*.js
 !rollup.config.js
 *.js.map
 *.d.ts
-!backend/src/sodium-native.d.ts
 *.tgz
 .rpt2*/
 cache/
