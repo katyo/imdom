@@ -1,0 +1,56 @@
+{
+  "name": "imdom-todomvc",
+  "version": "0.1.0",
+  "description": "TodoMVC using imdom and smart updates",
+  "scripts": {
+    "build": "mkdir -p dist && ts-node src/html && rollup -c",
+    "build_": "rollup -c",
+    "watch": "rollup -c -w",
+    "clean": "rm -rf dist",
+    "prepare": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "K <kayo@illumium.org>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^8",
+    "imdom": "../../",
+    "raf": "^3.4.1",
+    "raf-polyfill": "^1",
+    "todomvc-app-css": "^2",
+    "todomvc-common": "^1",
+    "ts-node": "^8",
+    "tslib": "^1",
+    "typescript": "^3",
+    "undom": "^0.4.0"
+  },
+  "devDependencies": {
+    "@ampproject/rollup-plugin-closure-compiler": "^0.8",
+    "@babel/core": "^7",
+    "@babel/preset-env": "^7",
+    "node-zopfli": "^2",
+    "postcss-import": "^12",
+    "rollup": "^1",
+    "rollup-plugin-babel": "^4",
+    "rollup-plugin-gzip": "^2",
+    "rollup-plugin-make": "^3",
+    "rollup-plugin-sourcemaps": "^0.4",
+    "rollup-plugin-node-resolve": "^4",
+    "rollup-plugin-postcss": "^2",
+    "rollup-plugin-replace": "^2",
+    "rollup-plugin-typescript2": "^0.20",
+    "rollup-plugin-uglify": "^6",
+    "rollup-plugin-visualizer": "^1"
+  },
+  "config": {
+    "target_dir": "dist",
+    "bind_uri": ":8081",
+    "use_babel": true,
+    "js_minifier_": "closure-compiler",
+    "js_minifier": "uglify",
+    "make_deps": true,
+    "compress": true,
+    "compressor": "zopfli",
+    "visualize": true
+  }
+}
