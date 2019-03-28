@@ -1,5 +1,5 @@
 import { ok, strictEqual as se, deepStrictEqual as dse } from 'assert';
-import { NULL as _, DomElement, DomNamespace, DomText, parse, DomFlags } from '../src/index';
+import { NULL as _, DomElement, DomNameSpace, DomText, parse, DomFlags } from '../src/index';
 
 describe('parse', () => {
     describe('fragments', () => {
@@ -10,15 +10,15 @@ describe('parse', () => {
             ok(vdom);
             ok(vdom._);
             se(vdom._.length, 0);
-            
+
             se(vdom.$, elm);
-            dse(vdom.x, {n: DomNamespace.XHTML, t: 'div', i: _, c: _, k: _});
+            dse(vdom.x, {n: DomNameSpace.XHTML, t: 'div', i: _, c: _, k: _});
             dse(vdom.a, {});
             dse(vdom.s, {});
             dse(vdom.c, {});
             dse(vdom._, []);
         });
-        
+
         it('two child nodes', () => {
             const elm = document.createElement('div');
             elm.innerHTML = '<span></span><p></p>';
@@ -26,14 +26,14 @@ describe('parse', () => {
 
             se(vdom.$, elm);
             se(vdom._.length, 2);
-            
+
             const n1 = vdom._[0] as DomElement;
             const n2 = vdom._[1] as DomElement;
-            
+
             se(n1.$, elm.firstChild);
             se(n2.$, elm.lastChild);
-            dse(n1.x, {n: DomNamespace.XHTML, t: 'span', i: _, c: _, k: _});
-            dse(n2.x, {n: DomNamespace.XHTML, t: 'p', i: _, c: _, k: _});
+            dse(n1.x, {n: DomNameSpace.XHTML, t: 'span', i: _, c: _, k: _});
+            dse(n2.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: _, k: _});
             se(n1.f, DomFlags.Element);
             se(n2.f, DomFlags.Element);
             dse(n1.a, {});
@@ -68,17 +68,17 @@ describe('parse', () => {
 
             se(vdom.$, elm);
             se(vdom._.length, 3);
-            
+
             const n1 = vdom._[0] as DomElement;
             const n2 = vdom._[1] as DomElement;
             const n3 = vdom._[2] as DomElement;
-            
+
             se(n1.$, elm.children[2]);
             se(n2.$, elm.children[3]);
             se(n3.$, elm.children[4]);
-            dse(n1.x, {n: DomNamespace.XHTML, t: 'p', i: _, c: _, k: _});
-            dse(n2.x, {n: DomNamespace.XHTML, t: 'img', i: _, c: _, k: _});
-            dse(n3.x, {n: DomNamespace.XHTML, t: 'blockquote', i: _, c: _, k: _});
+            dse(n1.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: _, k: _});
+            dse(n2.x, {n: DomNameSpace.XHTML, t: 'img', i: _, c: _, k: _});
+            dse(n3.x, {n: DomNameSpace.XHTML, t: 'blockquote', i: _, c: _, k: _});
             se(n1.f, DomFlags.Element);
             se(n2.f, DomFlags.Element);
             se(n3.f, DomFlags.Element);
@@ -101,10 +101,10 @@ describe('parse', () => {
         const n3 = vdom._[2] as DomElement;
         const n4 = vdom._[3] as DomElement;
 
-        it('with id', () => { dse(n1.x, {n: DomNamespace.XHTML, t: 'span', i: 'unique', c: _, k: _}); });
-        it('with class', () => { dse(n2.x, {n: DomNamespace.XHTML, t: 'p', i: _, c: {paragraph: true}, k: _}); });
-        it('with two classes', () => { dse(n3.x, {n: DomNamespace.XHTML, t: 'a', i: _, c: {menu: true, active: true}, k: _}); });
-        it('with id, class and key', () => { dse(n4.x, {n: DomNamespace.XHTML, t: 'div', i: 'page', c: {main: true}, k: 'some'}); });
+        it('with id', () => { dse(n1.x, {n: DomNameSpace.XHTML, t: 'span', i: 'unique', c: _, k: _}); });
+        it('with class', () => { dse(n2.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: {paragraph: true}, k: _}); });
+        it('with two classes', () => { dse(n3.x, {n: DomNameSpace.XHTML, t: 'a', i: _, c: {menu: true, active: true}, k: _}); });
+        it('with id, class and key', () => { dse(n4.x, {n: DomNameSpace.XHTML, t: 'div', i: 'page', c: {main: true}, k: 'some'}); });
     });
 
     describe('attributes', () => {
@@ -119,13 +119,13 @@ describe('parse', () => {
             dse(Object.keys(n1.a).sort(), ['disabled', 'type', 'value']);
             dse(Object.keys(n2.a).sort(), ['checked', 'type']);
         });
-        
+
         it('strings', () => {
             dse(n1.a.type, { v: 'text', t: 0 });
             dse(n1.a.value, { v: '', t: 0 });
             dse(n2.a.type, { v: 'checkbox', t: 0 });
         });
-        
+
         it('booleans', () => {
             dse(n1.a.disabled, { v: '', t: 0 });
             dse(n2.a.checked, { v: '', t: 0 });
@@ -144,7 +144,7 @@ describe('parse', () => {
             dse(Object.keys(n1.s), ['left', 'top', 'margin-right', 'padding-bottom']);
             dse(Object.keys(n2.s), ['display']);
         });
-        
+
         it('values', () => {
             dse(n1.s, {
                 left: { v: '0px', t: 0 },

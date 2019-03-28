@@ -62,7 +62,7 @@ function apply(state: Reconciler<Node>, nodes: Node[]) {
 describe('reconciler', () => {
     let nodes: Node[];
     let state: Reconciler<Node>;
-    
+
     beforeEach(() => {
         nodes = [1, 2, 3, 4, 5, 6, 7];
         state = use_nodes(nodes.slice(0));
@@ -72,26 +72,28 @@ describe('reconciler', () => {
         describe('single', () => {
             it('none', () => {
                 const node1 = reuse_node(state, match, 8, true);
-                
+
                 ok(!node1);
                 se(nth(state, 0)!.t, Op.Remove);
                 dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
+                console.log(state.c);
                 se(nth(state, 1), void 0);
                 se(lth(state, 0), void 0);
 
                 apply(state, nodes);
                 dse(nodes, []);
             });
-            
+
             it('first', () => {
                 const node1 = reuse_node(state, match, 1, true);
-                
+
                 ok(node1);
                 se(node1, 1);
                 se(nth(state, 0)!.t, Op.Update);
                 dse(nth(state, 0)!._, [1]);
                 se(nth(state, 1)!.t, Op.Remove);
                 dse(nth(state, 1)!._, [2, 3, 4, 5, 6, 7]);
+                console.log(state.c);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 0));
                 se(lth(state, 1), void 0);
@@ -99,10 +101,10 @@ describe('reconciler', () => {
                 apply(state, nodes);
                 dse(nodes, [1]);
             });
-            
+
             it('second', () => {
                 const node1 = reuse_node(state, match, 2, true);
-                
+
                 ok(node1);
                 se(node1, 2);
                 se(nth(state, 0)!.t, Op.Remove);
@@ -121,7 +123,7 @@ describe('reconciler', () => {
 
             it('third', () => {
                 const node1 = reuse_node(state, match, 3, true);
-                
+
                 ok(node1);
                 se(node1, 3);
                 se(nth(state, 0)!.t, Op.Remove);
@@ -140,7 +142,7 @@ describe('reconciler', () => {
 
             it('last', () => {
                 const node1 = reuse_node(state, match, 7, true);
-                
+
                 ok(node1);
                 se(node1, 7);
                 se(nth(state, 0)!.t, Op.Remove);
@@ -155,13 +157,13 @@ describe('reconciler', () => {
                 dse(nodes, [7]);
             });
         });
-        
+
         describe('multiple', () => {
             describe('forward', () => {
                 it('first and second', () => {
                     const node1 = reuse_node(state, match, 1, true);
                     const node2 = reuse_node(state, match, 2, true);
-                    
+
                     ok(node1);
                     se(node1, 1);
                     ok(node2);
@@ -181,7 +183,7 @@ describe('reconciler', () => {
                 it('second and third', () => {
                     const node1 = reuse_node(state, match, 2, true);
                     const node2 = reuse_node(state, match, 3, true);
-                    
+
                     ok(node1);
                     se(node1, 2);
                     ok(node2);
@@ -203,7 +205,7 @@ describe('reconciler', () => {
                 it('penult and last', () => {
                     const node1 = reuse_node(state, match, 6, true);
                     const node2 = reuse_node(state, match, 7, true);
-                    
+
                     ok(node1);
                     se(node1, 6);
                     ok(node2);
@@ -223,7 +225,7 @@ describe('reconciler', () => {
                 it('first and last', () => {
                     const node1 = reuse_node(state, match, 1, true);
                     const node2 = reuse_node(state, match, 7, true);
-                    
+
                     ok(node1);
                     se(node1, 1);
                     ok(node2);
@@ -248,7 +250,7 @@ describe('reconciler', () => {
                 it('second and first', () => {
                     const node1 = reuse_node(state, match, 2, true);
                     const node2 = reuse_node(state, match, 1, true);
-                    
+
                     ok(node1);
                     se(node1, 2);
                     ok(node2);
@@ -271,7 +273,7 @@ describe('reconciler', () => {
                 it('third and second', () => {
                     const node1 = reuse_node(state, match, 3, true);
                     const node2 = reuse_node(state, match, 2, true);
-                    
+
                     ok(node1);
                     se(node1, 3);
                     ok(node2);
@@ -296,7 +298,7 @@ describe('reconciler', () => {
                 it('last and penult', () => {
                     const node1 = reuse_node(state, match, 7, true);
                     const node2 = reuse_node(state, match, 6, true);
-                    
+
                     ok(node1);
                     se(node1, 7);
                     ok(node2);
@@ -319,7 +321,7 @@ describe('reconciler', () => {
                 it('last and first', () => {
                     const node1 = reuse_node(state, match, 7, true);
                     const node2 = reuse_node(state, match, 1, true);
-                    
+
                     ok(node1);
                     se(node1, 7);
                     ok(node2);
@@ -346,7 +348,7 @@ describe('reconciler', () => {
         describe('single', () => {
             it('insert', () => {
                 push_node(state, 8);
-                
+
                 se(nth(state, 0)!.t, Op.Remove);
                 dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
                 se(nth(state, 1), void 0);
@@ -424,7 +426,7 @@ describe('reconciler', () => {
                 se(nth(state, 1)!.t, Op.Update);
                 dse(nth(state, 1)!._, [7]);
                 se(nth(state, 2), void 0);
-                
+
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8]);
@@ -439,7 +441,7 @@ describe('reconciler', () => {
             it('insert two', () => {
                 push_node(state, 8);
                 push_node(state, 9);
-                
+
                 se(nth(state, 0)!.t, Op.Remove);
                 dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
                 se(nth(state, 1), void 0);
@@ -672,7 +674,7 @@ describe('reconciler', () => {
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 5, 6, 7]);
             });
-            
+
             it('move single and replace twice in the middle', () => {
                 reuse_node(state, match, 1, true);
                 reuse_node(state, match, 2, true);

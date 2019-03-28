@@ -18,13 +18,13 @@ import { NULL } from './utils';
   5. [{i: 0, l: 2}, {i: 4, l: 2}, {i: 2, l: 1}]
   6. [{i: 0, l: 2}, {i: 4, l: 2}, {i: 2, l: 1}, {i: 6, l: 1}]
   7. [{i: 0, l: 2}, {i: 4, l: 2}, {i: 2, l: 1}, {i: 6, l: 1}, {l: 1}]
-  
+
   II. Reordering
 
   The main goal: optimize reordering task by minimizing
   number of required DOM operations
   (such as insertBefore, removeChild, replaceChild).
-  
+
   (i - position, l - weight)
 
   [2 1 3 4] -> [3 1 4 2]
@@ -34,7 +34,7 @@ import { NULL } from './utils';
 */
 
 /*
-  
+
   [a b c d e f] => [a c g e d f]
 
   [_ r _ i u]
@@ -142,16 +142,16 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
     const {
         b, // last destination segment
     } = state;
-    
+
     const {
         _, // segment nodes
         _: {
             length: l // number of segment nodes
         }
     } = c;
-    
+
     let d: Segment<T> | void; // new segment which contains reused node
-    
+
     if (i) { // when node isn't first
         if (i == l - 1) { // when node is last
             append_src(state, d = to_segment( // create new segment for reused node
@@ -160,12 +160,12 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
             ), c); // append segment to current
         } else { // when node isn't last
             c._ = _.slice(0, i); // set current nodes before reused only
-            
+
             append_src(state, d = to_segment( // create new segment for reused node
                 _.slice(i, i + 1), // put reused node only
                 Op.Update, // mark as reused
             ), c); // append segment to current
-            
+
             append_src(state, to_segment( // create new segment for removed nodes after reused node
                 _.slice(i + 1), // put nodes after reused node only
                 Op.Remove, // mark as removed
@@ -177,7 +177,7 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
             && b.n == c // and next source is current segment
            ) {
             b._.push(_.shift()!); // simply move node to previous destination segment
-            
+
             if (l < 2) { // when only one node in segment
                 remove_src(state, c); // remove current segment
             }
@@ -193,7 +193,7 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
             }
         }
     }
-    
+
     if (d) { // when we have new segment for reused node
         append_dst(state, d);
     }
@@ -205,7 +205,7 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
     let e: SegmentRef<T>; // end at none segment
     let i: number; // node index
     let n: T | undefined;
-    
+
     for (;;) {
         for (; c != e; c = c!.n) { // iterate over source segments
             if (is_remove(c!)) { // when segment is to remove
@@ -220,7 +220,7 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
                 }
             }
         }
-        
+
         if (state.c) { // when we have current reusing segment
             // iterate over source segments before current
             c = state.s; // start from first segment
@@ -237,10 +237,10 @@ export function push_node<T>(state: Reconciler<T>, node: T) {
     let {
         b: last, // last destination segment
     } = state;
-    
+
     if (last // we have last destination segment
         && is_insert(last)) { // and it is marked to insert
-        
+
         last._.push(node); // append node to last destination segment nodes
     } else {
         append_dst(state, to_segment( // create new destination segment
@@ -258,10 +258,10 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
     let d: number; // number of source nodes to remove
     let n: number; // number of destination nodes to insert
     let l: number; // number of overlapped nodes
-    
+
     let c: SegmentRef<T> = state.a; // current destination segment
     let h: SegmentRef<T>; // current easiest source segment
-    
+
     for (; c; c = c.a) { // iterate over destination segments
         if (is_update(c) // when segment is reused
             && (!h || c._.length > h._.length) // and weight greater than previous
@@ -272,45 +272,45 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
 
     if (h) { // when heaviest reused segment found
         const h_ = h._;
-        
+
         for (;;) {
             const {
                 b, // previous destination segment
                 a, // next destination segment
             } = h;
-            
+
             const s = b && a ? // when we have previous and next destination segments
                 (b._.length < a._.length ? b : a) : // select easiest segment to merge
                 b ? b : a; // when we have previous destination segment
-            
+
             if (!s) break; // nothing to merge, break loop
 
             const s_ = s._; // segment nodes
             const p = s == b; // when segment is before heaviest destination segment
             const u = is_update(s); // segment is for update
-            
+
             i = 0; // initialize index of node
             n = s_.length; // number of nodes to insert
             l = 0; // no overlapped nodes
-            
+
             if (!(u && (p ? h.p == s : h.n == s))) { // when segment doesn't already merged by previous operations
                 const o = p ? h.p : h.n; // get source segment
-                
+
                 if (o && is_remove(o)) { // when source segment marked to remove
                     let o_ = o._; // get nodes to remove
-                    
+
                     if (u && p ? o.p == s : o.n == s) { // when reused nodes previous or next of removed
                         for (i = 0; i < o_.length; i++) { // iterate over nodes to remove
                             remove(o_[i], ctx); // remove segment node
                         }
-                        
+
                         remove_src(state, o); // remove empty segment
                         n = 0; // we doesn't need insert nodes now
                     } else {
                         // we intend to replace overlapped nodes
                         d = o._.length; // number of nodes to remove
                         l = Math.min(d, n); // number of overlapped nodes
-                        
+
                         if (d > l) { // when we have extra nodes to remove
                             if (p) { // when merged segment before heaviest segment
                                 // cut nodes from tail
@@ -324,14 +324,14 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                         } else {
                             remove_src(state, o); // remove empty segment
                         }
-                        
+
                         for (; i < l; i++) { // iterate over overlapped nodes
                             replace(s_[i], o_[i], ctx); // replace overlapped node
                         }
                     }
                 }
 
-                if (n > l) { // when we have extra nodes to insert                    
+                if (n > l) { // when we have extra nodes to insert
                     // reference node to insert before
                     const r = p ? // when merged segment before heaviest segment
                         h_[0] : // insert extra nodes before first node of heaviest segment
@@ -343,13 +343,13 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                             // exclude appended node from insertion
                             s_[n]! // use last node as reference for prepending
                         );
-                    
+
                     for (; i < n; i++) { // iterate over extra nodes to insert
                         prepend(s_[i], r, ctx); // insert extra node before reference
                     }
                 }
             }
-            
+
             if (u) { // when segment is in source
                 remove_src(state, s); // remove merged source segment
             }
@@ -388,7 +388,7 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
             }
         } else if (n > l) { // when we have extra destination nodes to append
             append(a!._[--n], a!._[i - 1], ctx); // append last node to end
-            
+
             for (; i < n; i++) { // iterate over extra destination nodes
                 prepend(a!._[i], a!._[n], ctx); // prepend extra node
             }
@@ -437,14 +437,14 @@ function append_dst<T>(root: Reconciler<T>, item: Segment<T>) {
     const {
         b: last, // last destination segment
     } = root;
-    
+
     if (last) {
         last.a = item; // set item as next for last
         item.b = last; // set last as previous for item
     } else {
         root.a = item; // set a first item
     }
-    
+
     root.b = item; // set a last item
 }
 

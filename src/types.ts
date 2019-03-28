@@ -4,17 +4,22 @@
 export type DomNodes = DomNode[];
 
 /** Single node */
-export type DomNode = DomElement | DomText | DomComment;
+export type DomNode = DomElement | DomText | DomComment | DomDocType;
 
 /** Virtual node flags */
 export const enum DomFlags {
+    /** Empty flags */
+    Empty = 0,
+
     /** Text node */
     Text = 1 << 0,
     /** Comment node */
     Comment = 1 << 1,
+    /** Document type node */
+    DocType = 1 << 2,
     /** Element node */
-    Element = 1 << 2,
-    
+    Element = 1 << 3,
+
     /** Node is attached */
     Attached = 1 << 6,
     /** Node marked to remove */
@@ -39,6 +44,21 @@ export interface DomText extends DomBase<Text> {
 export interface DomComment extends DomBase<Comment> {
     /** Text content */
     t: string;
+}
+
+/** Single document type */
+export interface DomDocType extends DomBase<DocumentType> {
+    d: DomDocTypeSpec;
+}
+
+/** Document type specifiers */
+export interface DomDocTypeSpec {
+    /** Qualified name */
+    n: string;
+    /** Public id */
+    p: string;
+    /** System id */
+    s: string;
 }
 
 /** Single element node */
@@ -74,29 +94,29 @@ export interface DomSelector {
     /**
        Element name space
     */
-    n: DomNamespace,
-    
+    n: DomNameSpace,
+
     /**
        Element tag name
-       
+
        The name of tag in lower case.
     */
     t: string;
-    
+
     /**
        Element identifier
-       
+
        The value of attribute `id`.
     */
     i?: string;
-    
+
     /**
        Selector-specific classes
-       
+
        Some part of value of attribute `class`.
     */
     c?: DomClassSet;
-    
+
     /**
        Key
 
@@ -111,7 +131,7 @@ export interface DomSelector {
 export type DomKey = string | number;
 
 /** Namespaces */
-export const enum DomNamespace {
+export const enum DomNameSpace {
     XHTML,
     SVG,
     XLINK,

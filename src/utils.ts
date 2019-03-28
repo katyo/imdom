@@ -1,4 +1,4 @@
-import { DomFlags, DomNode, DomText, DomComment, DomElement, DomSelector, DomClassSet, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomNamespace } from './types';
+import { DomFlags, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomNameSpace } from './types';
 
 /** Undefined value */
 export const NULL = void 0;
@@ -33,13 +33,18 @@ export function is_comment(node: DomNode): node is DomComment {
     return (node.f & DomFlags.Comment) as unknown as boolean;
 }
 
+/** Virtual node is document type node */
+export function is_doctype(node: DomNode): node is DomDocType {
+    return (node.f & DomFlags.DocType) as unknown as boolean;
+}
+
 /** Check when virtual element matched to selector */
 function same_element(elm: DomElement, sel: DomSelector): boolean {
     const {x} = elm;
     return x.n == sel.n && // namespace is same
         x.t == sel.t && // tag name is same
         sel.i == x.i && // identifier is same
-        (!sel.c && !x.c || sel.c && x.c && has_classes(sel.c, x.c)) && // has same classes
+        (!sel.c || x.c && has_classes(sel.c, x.c)) && // has same classes
         sel.k == x.k || // key is same
         false; // not same
 }
@@ -64,6 +69,11 @@ export function match_comment(node: DomNode, str: string): node is DomComment {
     return is_comment(node) && same_text(node, str);
 }
 
+/** Virtual node is document type with nodeName which matched to string */
+export function match_doctype(node: DomNode, dt: DomDocTypeSpec): node is DomDocType {
+    return is_doctype(node) && node.d.n == dt.n && node.d.p == dt.p && node.d.s == dt.s;
+}
+
 /** Update string content of text node */
 export function update_text<T extends DomText | DomComment>(node: T, str: string) {
     if (node.t != str) {
@@ -79,7 +89,7 @@ export function parse_selector(sel: string): DomSelector {
     const res: DomSelector = {
         //n: ns_i && parse_ns(sel.substring(0, ns_i)) || DomNamespace.XHTML,
         //t: sel.substring(ns_i ? ns_i + 1 : 0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div'
-        n: DomNamespace.XHTML,
+        n: DomNameSpace.XHTML,
         t: sel.substring(0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div'
     };
     if (id_i >= 0) res.i = sel.substring(id_i + 1, cls_i >= 0 ? cls_i : sel.length);
@@ -134,7 +144,7 @@ export function node_selector(elm: Element): DomSelector {
         /*s: tag
             + (id ? '#' + id : '')
             + (cls ? build_classes(cls, '.') : ''),*/
-        n: parse_ns_uri(elm.namespaceURI) as DomNamespace, // name space
+        n: parse_ns_uri(elm.namespaceURI) as DomNameSpace, // name space
         t: tag, // tag name
         i: id, // identifier
         c: cls, // classes
@@ -159,18 +169,18 @@ function parse_ns(ns: string | null): DomNamespace | undefined {
     }
 }*/
 
-const ns_uri_map: Record<DomNamespace, string> = [
+const ns_uri_map: Record<DomNameSpace, string> = [
     'http://www.w3.org/1999/xhtml',
     'http://www.w3.org/2000/svg',
     'http://www.w3.org/1999/xlink',
     'http://www.w3.org/XML/1998/namespace',
 ];
 
-function parse_ns_uri(ns: string | null): DomNamespace | undefined {
+function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
     if (ns) {
-        for (let i: DomNamespace = 0; i < (ns_uri_map as unknown as string[]).length; i++) {
+        for (let i: DomNameSpace = 0; i < (ns_uri_map as unknown as string[]).length; i++) {
             if (ns_uri_map[i] == ns) {
-                return i as DomNamespace;
+                return i as DomNameSpace;
             }
         }
     }
@@ -180,11 +190,11 @@ function parse_ns_uri(ns: string | null): DomNamespace | undefined {
 export function create_element(doc: Document, sel: DomSelector): Element {
     const node = !sel.n ? doc.createElement(sel.t) : // create DOM element node
         doc.createElementNS(ns_uri_map[sel.n] as string, sel.t); // create DOM element node with namespace
-    
+
     if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present
     if (sel.c) for (const name in sel.c) add_class(node, name); // add classes when present
     if (is_defined(sel.k)) set_attr(node, 'data-key', sel.k); // set key attribute when present
-    
+
     return node;
 }
 
@@ -234,21 +244,25 @@ export function remove_node(parent: Node, child: Node) {
 
 /** Add class to DOM element */
 export function add_class(elm: Element, name: string) {
+    trace('add class', name, 'to', elm);
     elm.classList.add(name);
 }
 
 /** Remove class from DOM element */
 export function remove_class(elm: Element, name: string) {
+    trace('remove class', name, 'from', elm);
     elm.classList.remove(name);
 }
 
 /** Set style property to DOM element */
 export function set_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S, val: DomStyleMap[S]) {
+    trace('set style', name, '=', val, 'to', elm);
     elm.style.setProperty(name as string, val);
 }
 
 /** Remove style property from DOM element */
 export function remove_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S) {
+    trace('remove style', name, 'from', elm);
     elm.style.removeProperty(name as string);
 }
 
@@ -263,25 +277,42 @@ export function get_attr<A extends keyof DomAttrMap>(elm: Element, name: A): Dom
 }
 
 export function get_attr_str<A extends keyof DomAttrMap>(elm: Element, name: A): string | undefined {
-    if (has_attr(elm, name)) return get_attr(elm, name) as string;
+    if (has_attr(elm, name)) {
+        return get_attr(elm, name) as string;
+    }
 }
 
 /** Set attribute to DOM element */
 export function set_attr<A extends keyof DomAttrMap>(elm: Element, name: A, val: DomAttrMap[A]) {
-    elm.setAttribute(name, val as string);
+    trace('set attr', name, '=', val, 'to', elm);
+    const undef = !is_defined(val);
+    elm.setAttribute(name, undef ? EMPTY_STRING : val as string);
+    if (name == 'value') {
+        (elm as any)[name] = val; // set value DOM property
+    } else if (undef) {
+        (elm as any)[name] = true; // set boolean DOM property
+    }
 }
 
 /** Remove attribute from DOM element */
-export function remove_attr<A extends keyof DomAttrMap>(elm: Element, name: A) {
+export function remove_attr<A extends keyof DomAttrMap>(elm: Element, name: A, val: DomAttrMap[A]) {
+    trace('remove attr', name, 'from', elm);
     elm.removeAttribute(name);
+    if (name == 'value') {
+        (elm as any)[name] = ''; // reset value DOM property
+    } else if (!is_defined(val)) {
+        (elm as any)[name] = false; // reset boolean DOM property
+    }
 }
 
 /** Add event listener to DOM element */
 export function add_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
+    trace('add event', name, 'to', elm);
     elm.addEventListener(name as string, fn as EventListener, false);
 }
 
 /** Remove event listener from DOM element */
 export function remove_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
+    trace('remove event', name, 'from', elm);
     elm.removeEventListener(name as string, fn as EventListener, false);
 }
