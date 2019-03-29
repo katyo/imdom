@@ -1,9 +1,10 @@
 /** @module patch */
 
 import { DomTxnId, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
-import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, parse_selector, create_element, create_text, create_comment, update_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event, NULL, NOOP, trace } from './utils';
+import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, parse_selector, NULL, NOOP } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
-import { DEBUG, BROWSER } from './decls';
+import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './domop';
+import { BROWSER } from './decls';
 
 let doc: Document = document;
 
@@ -39,7 +40,7 @@ function is_attached(node: DomNode) {
 function detach(node: DomNode) {
     if (is_element(node) // when virtual node is element
         && is_attached(node)) { // and virtual element is attached
-        trace('detach', node.$);
+        //trace('detach', node.$);
         /*for (const child of node._) {
             detach(child);
         }*/
@@ -50,7 +51,7 @@ function detach(node: DomNode) {
 function attach(node: DomNode) {
     if (is_element(node) // when virtual node is element
         && !is_attached(node)) { // and virtual element is detached
-        trace('attach', node.$);
+        //trace('attach', node.$);
         node.f |= DomFlags.Attached; // mark element as attached
         for (const child of node._) {
             attach(child);
@@ -111,7 +112,7 @@ function stack_pop() {
     }*/
 }
 
-function create_text_elm(str: string): DomText {
+function create_text_node(str: string): DomText {
     return {
         $: BROWSER ? create_text(doc, str) : NULL as unknown as Text,
         f: DomFlags.Text,
@@ -119,7 +120,7 @@ function create_text_elm(str: string): DomText {
     };
 }
 
-function create_comment_elm(str: string): DomComment {
+function create_comment_node(str: string): DomComment {
     return {
         $: BROWSER ? create_comment(doc, str) : NULL as unknown as Comment,
         f: DomFlags.Comment,
@@ -127,15 +128,19 @@ function create_comment_elm(str: string): DomComment {
     };
 }
 
-function create_doctype_elm(dt: DomDocTypeSpec): DomDocType {
-    if (BROWSER && DEBUG) {
-        throw new Error("Cannot create document type nodes");
-    }
+function create_doctype_node(dt: DomDocTypeSpec): DomDocType {
     return {
-        $: NULL as unknown as DocumentType,
+        $: BROWSER ? create_doctype(doc, dt) : NULL as unknown as DocumentType,
         f: DomFlags.DocType,
         d: dt,
     };
+}
+
+/** Update string content of text node */
+export function update_text<T extends DomText | DomComment>(node: T, str: string) {
+    if (node.t != str) {
+        set_text(node.$, node.t = str);
+    }
 }
 
 function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => node is N, create: (ctx: Ctx) => N, update: (node: N, ctx: Ctx) => void, ctx: Ctx) {
@@ -239,18 +244,18 @@ export function end() {
 /** Put text node */
 export function text(str: string) {
     if (str) { // when string is not empty
-        push_text(is_text, create_text_elm, BROWSER ? update_text : NOOP, str); // push text node
+        push_text(is_text, create_text_node, BROWSER ? update_text : NOOP, str); // push text node
     }
 }
 
 /** Put comment node */
 export function comment(str: string) {
-    push_text(is_comment, create_comment_elm, BROWSER ? update_text : NOOP, str); // push comment node
+    push_text(is_comment, create_comment_node, BROWSER ? update_text : NOOP, str); // push comment node
 }
 
 /** Put document type node */
 export function doctype(qualifiedName: string, publicId: string = '', systemId: string = '') {
-    push_text(match_doctype, create_doctype_elm, NOOP, {n: qualifiedName, p: publicId, s: systemId}); // push document type node
+    push_text(match_doctype, create_doctype_node, NOOP, {n: qualifiedName, p: publicId, s: systemId}); // push document type node
 }
 
 /** Get current opened DOM element */

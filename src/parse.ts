@@ -15,7 +15,7 @@ export function parse(node: Element): DomElement;
 export function parse(node: Document): DomFragment;
 export function parse(node: Element | Document, offset: number, length: number): DomFragment;
 export function parse(node: Element | Document, offset?: number, length?: number): DomElement | DomFragment {
-    return node.nodeType == NodeType.Element ? parse_element(node as Element) : { // parse DOM fragment
+    return node.nodeType == NodeType.Element && !offset && !length ? parse_element(node as Element) : { // parse DOM fragment
         f: DomFlags.Empty,
         $: node, // set owner DOM node
         _: parse_children(node.childNodes, offset, length) // parse children nodes

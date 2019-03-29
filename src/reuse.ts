@@ -118,14 +118,15 @@ function to_segment<T>(nodes: T[], op: Op): Segment<T> {
 
 /** Initialize reconciler */
 export function use_nodes<T>(nodes: T[]): Reconciler<T> {
+    const first = to_segment( // create first source segment
+        nodes, // use all nodes as segment nodes
+        Op.Remove, // mark segment to remove
+    );
     return {
-        s: to_segment( // set first source segment
-            nodes, // use all nodes as segment nodes
-            Op.Remove, // mark segment to remove
-        ),
+        s: first, // set first source segment
         a: NULL, // clear reference to first destination segment
         b: NULL, // clear reference to last destination segment
-        c: NULL, // clear reference to current reusing segment
+        c: first, // use first source segment as current
     };
 }
 
@@ -201,18 +202,32 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
 
 /** Try to reuse node */
 export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) => boolean | undefined, ctx: X, next: boolean): T | void {
-    let c: SegmentRef<T> = state.c || state.s; // start from current or first segment
+    let c: SegmentRef<T> = state.c; // start from current or first segment
     let e: SegmentRef<T>; // end at none segment
     let i: number; // node index
     let n: T | undefined;
 
-    for (;;) {
+    for (; c; ) {
         for (; c != e; c = c!.n) { // iterate over source segments
             if (is_remove(c!)) { // when segment is to remove
                 for (i = 0; i < c!._.length; i++) { // iterate over nodes of segment
                     n = c!._[i]; // get current node
                     if (match(n, ctx)) { // when node is matched
                         split_segment(state, c!, i); // we intend to split segment
+
+                        c = state.b!.n; // set current segment to next of last destination
+                        if (c) { // when we have the next segment of last destination
+                            e = c; // use it as end for second seeking loop
+                            // run first seeking loop
+                            for (; c && !is_remove(c!); c = c!.n); // find next removing segment
+                        } else {
+                            e = NULL; // use none segment as end for second seeking loop
+                        }
+                        if (!c) { // when we haven't the next segment of last destination or first seeking loop failed
+                            // run second seeking loop
+                            for (c = state.s; c != e && !is_remove(c!); c = c!.n); // find next removing segment
+                        }
+                        state.c = c; // set current segment to next removing
                         return n; // return reused node
                     } else if (!next) { // when node isn't matched and no need to search next
                         return;
@@ -221,14 +236,13 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
             }
         }
 
-        if (state.c) { // when we have current reusing segment
-            // iterate over source segments before current
-            c = state.s; // start from first segment
-            e = state.c; // use current segment as end
-        } else {
-            // break iteration
-            break;
+        if (state.c == state.s || e) { // when current reusing segment is first or second iteration
+            break; // break iteration
         }
+
+        // iterate over source segments before current
+        c = state.s; // start from first segment
+        e = state.c; // use current segment as end
     }
 }
 

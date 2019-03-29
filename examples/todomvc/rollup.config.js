@@ -21,7 +21,8 @@ const visualize = config.visualize && require('rollup-plugin-visualizer');
 
 const { stringify } = JSON;
 
-const debug_assertions = !(process.env.NODE_ENV == 'production' || process.env.BUILD_TYPE == 'release' || config.debug_assertions == false);
+const debug = !(process.env.NODE_ENV == 'production' || process.env.BUILD_TYPE == 'release');
+const release = !debug;
 
 export default {
     context: 'this',
@@ -47,7 +48,7 @@ export default {
                     path: ['node_modules']
                 })
             ],
-            minimize: {
+            minimize: release && {
                 preset: ['advanced', { autoprefixer: { browsers: ['> 1%'] } }]
             },
         }),
@@ -62,15 +63,15 @@ export default {
         replace({
             'process.env.npm_package_name': stringify(name),
             'process.env.npm_package_version': stringify(version),
-            'process.env.NODE_ENV': stringify(debug_assertions ? 'development' : 'produnction'),
+            'process.env.NODE_ENV': stringify(debug ? 'development' : 'production'),
             'process.env.JS_TARGET': stringify('browser'),
-            'process.env.IMDOM_TRACE': stringify(false),
+            'process.env.JS_TRACE': stringify('dom' && ''),
         }),
         config.use_babel && babel({
             presets: [['@babel/preset-env', {modules: false}]],
             extensions: ['.js', '.ts'],
         }),
-        config.js_minifier == 'uglify' && uglify({
+        release && config.js_minifier == 'uglify' && uglify({
             ie8: true,
             mangle: {
                 toplevel: true,
@@ -88,7 +89,7 @@ export default {
                 comments: false
             }
         }),
-        config.js_minifier == 'terser' && terser({
+        release && config.js_minifier == 'terser' && terser({
             toplevel: true,
             ie8: true,
             safari10: true,
@@ -109,7 +110,7 @@ export default {
                 comments: false
             }
         }),
-        config.js_minifier == 'closure-compiler' && closure_compiler({
+        release && config.js_minifier == 'closure-compiler' && closure_compiler({
             compilation_level: 'ADVANCED',
             //warning_level: 'VERBOSE',
             env: 'BROWSER',
@@ -117,7 +118,7 @@ export default {
             language_out: 'ES5',
             rewrite_polyfills: true,
         }),
-        config.compress && gzip({
+        release && config.compress && gzip({
             customCompression: compress && (content => compress(Buffer.from(content))),
             fileName: config.compressor == 'brotli' ? '.br' : '.gz',
             additionalFiles: [

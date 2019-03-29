@@ -74,11 +74,14 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 8, true);
 
                 ok(!node1);
+                ok(state.c);
+                ok(!state.a);
+                ok(!state.b);
                 se(nth(state, 0)!.t, Op.Remove);
                 dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
-                console.log(state.c);
                 se(nth(state, 1), void 0);
                 se(lth(state, 0), void 0);
+                se(state.c, nth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, []);
@@ -88,15 +91,19 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 1, true);
 
                 ok(node1);
+                ok(state.c);
+                ok(state.a);
+                ok(state.b);
                 se(node1, 1);
                 se(nth(state, 0)!.t, Op.Update);
                 dse(nth(state, 0)!._, [1]);
                 se(nth(state, 1)!.t, Op.Remove);
                 dse(nth(state, 1)!._, [2, 3, 4, 5, 6, 7]);
-                console.log(state.c);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 0));
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
+                se(state.c, nth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1]);
@@ -106,6 +113,9 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 2, true);
 
                 ok(node1);
+                ok(state.c);
+                ok(state.a);
+                ok(state.b);
                 se(node1, 2);
                 se(nth(state, 0)!.t, Op.Remove);
                 dse(nth(state, 0)!._, [1]);
@@ -116,6 +126,8 @@ describe('reconciler', () => {
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
+                se(state.c, nth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [2]);
@@ -135,6 +147,8 @@ describe('reconciler', () => {
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
+                se(state.c, nth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [3]);
@@ -152,6 +166,8 @@ describe('reconciler', () => {
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
+                se(state.c, nth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [7]);
@@ -175,6 +191,8 @@ describe('reconciler', () => {
                     se(nth(state, 2), void 0);
                     se(lth(state, 0), nth(state, 0));
                     se(lth(state, 1), void 0);
+                    se(state.b, lth(state, 0));
+                    se(state.c, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [1, 2]);
@@ -197,6 +215,8 @@ describe('reconciler', () => {
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), void 0);
+                    se(state.b, lth(state, 0));
+                    se(state.c, nth(state, 2));
 
                     apply(state, nodes);
                     dse(nodes, [2, 3]);
@@ -217,6 +237,8 @@ describe('reconciler', () => {
                     se(nth(state, 2), void 0);
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), void 0);
+                    se(state.b, lth(state, 0));
+                    se(state.c, nth(state, 0));
 
                     apply(state, nodes);
                     dse(nodes, [6, 7]);
@@ -240,6 +262,8 @@ describe('reconciler', () => {
                     se(lth(state, 0), nth(state, 0));
                     se(lth(state, 1), nth(state, 2));
                     se(lth(state, 2), void 0);
+                    se(state.b, lth(state, 1));
+                    se(state.c, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [1, 7]);
@@ -265,6 +289,8 @@ describe('reconciler', () => {
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), nth(state, 0));
                     se(lth(state, 2), void 0);
+                    se(state.b, lth(state, 1));
+                    se(state.c, nth(state, 2));
 
                     apply(state, nodes);
                     dse(nodes, [2, 1]);
@@ -290,6 +316,8 @@ describe('reconciler', () => {
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 1));
                     se(lth(state, 2), void 0);
+                    se(state.b, lth(state, 1));
+                    se(state.c, nth(state, 3));
 
                     apply(state, nodes);
                     dse(nodes, [3, 2]);
@@ -313,6 +341,8 @@ describe('reconciler', () => {
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 1));
                     se(lth(state, 2), void 0);
+                    se(state.b, lth(state, 1));
+                    se(state.c, nth(state, 0));
 
                     apply(state, nodes);
                     dse(nodes, [7, 6]);
@@ -336,6 +366,8 @@ describe('reconciler', () => {
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 0));
                     se(lth(state, 2), void 0);
+                    se(state.b, lth(state, 1));
+                    se(state.c, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [7, 1]);
@@ -355,6 +387,7 @@ describe('reconciler', () => {
                 se(lth(state, 0)!.t, Op.Insert);
                 dse(lth(state, 0)!._, [8]);
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [8]);
@@ -373,6 +406,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1, 8]);
@@ -393,6 +427,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [2, 8]);
@@ -412,6 +447,7 @@ describe('reconciler', () => {
                 dse(lth(state, 0)!._, [8]);
                 se(lth(state, 1), nth(state, 1));
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [8, 7]);
@@ -431,6 +467,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [7, 8]);
@@ -448,6 +485,7 @@ describe('reconciler', () => {
                 se(lth(state, 0)!.t, Op.Insert);
                 dse(lth(state, 0)!._, [8, 9]);
                 se(lth(state, 1), void 0);
+                se(state.b, lth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [8, 9]);
@@ -467,6 +505,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [9, 8]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1, 9, 8]);
@@ -489,6 +528,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [2, 3, 8, 9]);
@@ -509,6 +549,7 @@ describe('reconciler', () => {
                 se(lth(state, 1)!.t, Op.Insert);
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), void 0);
+                se(state.b, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [6, 7, 8, 9]);
@@ -535,6 +576,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8]);
                 se(lth(state, 2), nth(state, 1));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 4, 5, 6, 7]);
@@ -562,6 +604,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), nth(state, 1));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 4, 5, 6, 7]);
@@ -589,6 +632,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 5, 6, 7]);
@@ -616,6 +660,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 6, 7]);
@@ -642,6 +687,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 8, 9, 6, 7]);
@@ -670,6 +716,7 @@ describe('reconciler', () => {
                 dse(lth(state, 1)!._, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
+                se(state.b, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 5, 6, 7]);
@@ -700,6 +747,7 @@ describe('reconciler', () => {
                 dse(lth(state, 2)!._, [8, 9]);
                 se(lth(state, 3), nth(state, 3));
                 se(lth(state, 4), void 0);
+                se(state.b, lth(state, 3));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 5, 8, 9, 6, 7]);
@@ -730,6 +778,7 @@ describe('reconciler', () => {
                 dse(lth(state, 2)!._, [8, 9]);
                 se(lth(state, 3), nth(state, 3));
                 se(lth(state, 4), void 0);
+                se(state.b, lth(state, 3));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 5, 6, 8, 9, 7]);

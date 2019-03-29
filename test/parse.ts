@@ -5,7 +5,7 @@ describe('parse', () => {
     describe('fragments', () => {
         it('standalone node', () => {
             const elm = document.createElement('div');
-            const vdom = parse(elm) as DomElement;
+            const vdom = parse(elm);
 
             ok(vdom);
             ok(vdom._);
@@ -22,7 +22,7 @@ describe('parse', () => {
         it('two child nodes', () => {
             const elm = document.createElement('div');
             elm.innerHTML = '<span></span><p></p>';
-            const vdom = parse(elm) as DomElement;
+            const vdom = parse(elm);
 
             se(vdom.$, elm);
             se(vdom._.length, 2);
@@ -48,7 +48,7 @@ describe('parse', () => {
             elm.innerHTML = '<p>...</p><p></p>';
             const elm1 = elm.children[0];
             const elm2 = elm.children[1];
-            const vdom = parse(elm) as DomElement;
+            const vdom = parse(elm);
 
             se(vdom.$, elm);
             se(vdom._.length, 2);
@@ -64,7 +64,7 @@ describe('parse', () => {
         it('three child nodes with offset', () => {
             const elm = document.createElement('div');
             elm.innerHTML = '<div></div><span></span><p></p><img></img><blockquote></blockquote><span></span>';
-            const vdom = parse(elm, 2, 3) as DomElement;
+            const vdom = parse(elm, 2, 3);
 
             se(vdom.$, elm);
             se(vdom._.length, 3);
@@ -94,7 +94,7 @@ describe('parse', () => {
     describe('selectors', () => {
         const elm = document.createElement('div');
         elm.innerHTML = '<span id="unique"></span><p class="paragraph"></p><a class="menu active"></a><div id="page" class="main" data-key="some"></div>';
-        const vdom = parse(elm) as DomElement;
+        const vdom = parse(elm);
 
         const n1 = vdom._[0] as DomElement;
         const n2 = vdom._[1] as DomElement;
@@ -110,7 +110,7 @@ describe('parse', () => {
     describe('attributes', () => {
         const elm = document.createElement('div');
         elm.innerHTML = '<input type="text" value="" disabled><input type="checkbox" checked>';
-        const vdom = parse(elm) as DomElement;
+        const vdom = parse(elm);
 
         const n1 = vdom._[0] as DomElement;
         const n2 = vdom._[1] as DomElement;
@@ -135,7 +135,7 @@ describe('parse', () => {
     describe('styles', () => {
         const elm = document.createElement('div');
         elm.innerHTML = '<div style="left: 0; top: 15%; margin-right: -11pt; padding-bottom: 22px;"></div><span style="display:none"></span>';
-        const vdom = parse(elm) as DomElement;
+        const vdom = parse(elm);
 
         const n1 = vdom._[0] as DomElement;
         const n2 = vdom._[1] as DomElement;

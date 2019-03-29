@@ -1,4 +1,4 @@
-import { DomFlags, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomNameSpace } from './types';
+import { DomFlags, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrMap } from './types';
 
 /** Undefined value */
 export const NULL = void 0;
@@ -13,10 +13,6 @@ export const NOOP = () => {};
 export function is_defined<T>(v: T | undefined | null | void): v is T {
     return v != NULL;
 }
-
-/** Trace function */
-export const trace: (...args: any[]) => void = process.env.IMDOM_TRACE ?
-    (...args) => { console.log(...args); } : NOOP;
 
 /** Virtual node is element node */
 export function is_element(node: DomNode): node is DomElement {
@@ -74,13 +70,6 @@ export function match_doctype(node: DomNode, dt: DomDocTypeSpec): node is DomDoc
     return is_doctype(node) && node.d.n == dt.n && node.d.p == dt.p && node.d.s == dt.s;
 }
 
-/** Update string content of text node */
-export function update_text<T extends DomText | DomComment>(node: T, str: string) {
-    if (node.t != str) {
-        set_text(node.$, node.t = str);
-    }
-}
-
 /** Parse element selector from string */
 export function parse_selector(sel: string): DomSelector {
     //const ns_i = sel.search(/:/);
@@ -120,20 +109,6 @@ function has_classes(req: DomClassSet, all: DomClassSet): boolean {
     return true;
 }
 
-/**
-   Calculate node offset across to other node
-
-   @note The node should be after reference.
-*/
-/*export function offset_node(node: Node, ref: Node): number {
-    let offset = 0; // initialize offset
-    // seek beginning node to calculate offset
-    for (let elm = ref;
-         elm != node && (elm = elm.nextSibling as Node);
-         offset++);
-    return offset;
-}*/
-
 /** Get selector from DOM element */
 export function node_selector(elm: Element): DomSelector {
     const tag = elm.tagName.toLowerCase();
@@ -150,6 +125,22 @@ export function node_selector(elm: Element): DomSelector {
         c: cls, // classes
         k: get_attr_str(elm, 'data-key'), // key
     };
+}
+
+/** Check attribute of DOM element */
+export function has_attr<A extends keyof DomAttrMap>(elm: Element, name: A): boolean {
+    return elm.hasAttribute(name);
+}
+
+/** Get attribute from DOM element */
+export function get_attr<A extends keyof DomAttrMap>(elm: Element, name: A): DomAttrMap[A] | null {
+    return elm.getAttribute(name);
+}
+
+export function get_attr_str<A extends keyof DomAttrMap>(elm: Element, name: A): string | undefined {
+    if (has_attr(elm, name)) {
+        return get_attr(elm, name) as string;
+    }
 }
 
 /*const ns_map: Record<DomNamespace, string> = [
@@ -169,14 +160,14 @@ function parse_ns(ns: string | null): DomNamespace | undefined {
     }
 }*/
 
-const ns_uri_map: Record<DomNameSpace, string> = [
+export const ns_uri_map: Record<DomNameSpace, string> = [
     'http://www.w3.org/1999/xhtml',
     'http://www.w3.org/2000/svg',
     'http://www.w3.org/1999/xlink',
     'http://www.w3.org/XML/1998/namespace',
 ];
 
-function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
+export function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
     if (ns) {
         for (let i: DomNameSpace = 0; i < (ns_uri_map as unknown as string[]).length; i++) {
             if (ns_uri_map[i] == ns) {
@@ -184,135 +175,4 @@ function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
             }
         }
     }
-}
-
-/** Create new DOM element node */
-export function create_element(doc: Document, sel: DomSelector): Element {
-    const node = !sel.n ? doc.createElement(sel.t) : // create DOM element node
-        doc.createElementNS(ns_uri_map[sel.n] as string, sel.t); // create DOM element node with namespace
-
-    if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present
-    if (sel.c) for (const name in sel.c) add_class(node, name); // add classes when present
-    if (is_defined(sel.k)) set_attr(node, 'data-key', sel.k); // set key attribute when present
-
-    return node;
-}
-
-/** Create new DOM text node */
-export function create_text(doc: Document, str: string): Text {
-    return doc.createTextNode(str);
-}
-
-/** Create new DOM comment node */
-export function create_comment(doc: Document, str: string): Comment {
-    return doc.createComment(str);
-}
-
-/** Set text content of node */
-export function set_text(node: Text | Comment | Element, str: string) {
-    node.textContent = str;
-}
-
-/** Replace child DOM node in parent DOM node by other DOM node */
-export function replace_node(parent: Node, other: Node, child: Node) {
-    trace('replace node', child, 'in', parent, 'by', other);
-    parent.replaceChild(other, child);
-}
-
-/** Insert child DOM node to parent DOM node before other child DOM node */
-export function prepend_node(parent: Node, child: Node, other: Node) {
-    trace('insert node', child, 'to', parent, 'before', other);
-    parent.insertBefore(child, other);
-}
-
-/** Insert child DOM node to parent DOM node after other child DOM node */
-export function append_node(parent: Node, child: Node, other: Node | undefined = NULL) {
-    if (other && other.nextSibling) {
-        trace('insert node', child, 'to', parent, 'after', other);
-        parent.insertBefore(child, other.nextSibling);
-    } else {
-        trace('append node', child, 'to', parent);
-        parent.appendChild(child);
-    }
-}
-
-/** Remove child DOM node from parent DOM node */
-export function remove_node(parent: Node, child: Node) {
-    trace('remove node', child, 'from', parent);
-    parent.removeChild(child);
-}
-
-/** Add class to DOM element */
-export function add_class(elm: Element, name: string) {
-    trace('add class', name, 'to', elm);
-    elm.classList.add(name);
-}
-
-/** Remove class from DOM element */
-export function remove_class(elm: Element, name: string) {
-    trace('remove class', name, 'from', elm);
-    elm.classList.remove(name);
-}
-
-/** Set style property to DOM element */
-export function set_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S, val: DomStyleMap[S]) {
-    trace('set style', name, '=', val, 'to', elm);
-    elm.style.setProperty(name as string, val);
-}
-
-/** Remove style property from DOM element */
-export function remove_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S) {
-    trace('remove style', name, 'from', elm);
-    elm.style.removeProperty(name as string);
-}
-
-/** Check attribute of DOM element */
-export function has_attr<A extends keyof DomAttrMap>(elm: Element, name: A): boolean {
-    return elm.hasAttribute(name);
-}
-
-/** Get attribute from DOM element */
-export function get_attr<A extends keyof DomAttrMap>(elm: Element, name: A): DomAttrMap[A] | null {
-    return elm.getAttribute(name);
-}
-
-export function get_attr_str<A extends keyof DomAttrMap>(elm: Element, name: A): string | undefined {
-    if (has_attr(elm, name)) {
-        return get_attr(elm, name) as string;
-    }
-}
-
-/** Set attribute to DOM element */
-export function set_attr<A extends keyof DomAttrMap>(elm: Element, name: A, val: DomAttrMap[A]) {
-    trace('set attr', name, '=', val, 'to', elm);
-    const undef = !is_defined(val);
-    elm.setAttribute(name, undef ? EMPTY_STRING : val as string);
-    if (name == 'value') {
-        (elm as any)[name] = val; // set value DOM property
-    } else if (undef) {
-        (elm as any)[name] = true; // set boolean DOM property
-    }
-}
-
-/** Remove attribute from DOM element */
-export function remove_attr<A extends keyof DomAttrMap>(elm: Element, name: A, val: DomAttrMap[A]) {
-    trace('remove attr', name, 'from', elm);
-    elm.removeAttribute(name);
-    if (name == 'value') {
-        (elm as any)[name] = ''; // reset value DOM property
-    } else if (!is_defined(val)) {
-        (elm as any)[name] = false; // reset boolean DOM property
-    }
-}
-
-/** Add event listener to DOM element */
-export function add_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
-    trace('add event', name, 'to', elm);
-    elm.addEventListener(name as string, fn as EventListener, false);
-}
-
-/** Remove event listener from DOM element */
-export function remove_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
-    trace('remove event', name, 'from', elm);
-    elm.removeEventListener(name as string, fn as EventListener, false);
 }
