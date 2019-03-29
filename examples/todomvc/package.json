@@ -14,8 +14,8 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^8",
-    "imdom": "../../",
-    "raf": "^3.4.1",
+    "imdom": "../../packages/imdom",
+    "raf": "^3",
     "raf-polyfill": "^1",
     "todomvc-app-css": "^2",
     "todomvc-common": "^1",

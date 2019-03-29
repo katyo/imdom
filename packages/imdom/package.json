@@ -1,0 +1,64 @@
+{
+  "name": "imdom",
+  "version": "0.1.0",
+  "description": "Immediate mode virtual DOM library.",
+  "main": "dist/main/index.js",
+  "module": "dist/module/index.js",
+  "typings": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "npm run build:main && npm run build:module",
+    "clean": "npm run clean:main && npm run clean:module",
+    "build:module": "../../node_modules/.bin/tsc -p tsconfig.module.json",
+    "clean:module": "rm -rf dist/module",
+    "build:main": "../../node_modules/.bin/tsc -p tsconfig.main.json",
+    "clean:main": "rm -rf dist/main dist/types",
+    "prepublishOnly": "npm run build && npm run test",
+    "build:test": "../../node_modules/.bin/browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
+    "clean:test": "rm -f test-out.js",
+    "test": "../../node_modules/.bin/testem ci",
+    "test:node": "../../node_modules/.bin/mocha -r ts-node/register test/node.ts -R spec",
+    "test:dev": "../../node_modules/.bin/testem",
+    "doc": "../../node_modules/.bin/typedoc src",
+    "doc:md": "../../node_modules/.bin/typedoc --out doc.md --theme markdown src",
+    "doc:json": "../../node_modules/.bin/typedoc --json doc.json src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/imdom"
+  },
+  "keywords": [
+    "ui",
+    "view",
+    "virtual-dom",
+    "client",
+    "server",
+    "typescript",
+    "es6",
+    "es2015",
+    "es2018"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^12",
+    "@types/mocha": "^5",
+    "@types/node": "^8",
+    "aiden-doc": "^1",
+    "browserify": "^16",
+    "jsdom": "^13",
+    "mocha": "^5",
+    "testem": "^2",
+    "ts-node": "^7",
+    "tsify": "^4",
+    "typedoc": "^0.14",
+    "typedoc-plugin-external-module-name": "^2",
+    "typedoc-plugin-markdown": "^1",
+    "typescript": "^3"
+  },
+  "dependencies": {
+    "tslib": "^1"
+  }
+}

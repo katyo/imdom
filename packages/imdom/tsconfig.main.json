@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "outDir": "dist/main",
+    "declarationDir": "dist/types",
+    "declaration": true,
+    "preserveConstEnums": true
+  }
+}

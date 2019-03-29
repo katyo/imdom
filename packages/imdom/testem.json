@@ -7,11 +7,11 @@
   "serve_files": [
     "test-out.js"
   ],
-  "before_tests": "npm run build-test",
-  "on_exit": "npm run clean-test",
+  "before_tests": "npm run build:test",
+  "on_exit": "npm run clean:test",
   "launchers": {
     "nodejs": {
-      "command": "mocha -r ts-node/register test/index.ts -R tap",
+      "command": "../../node_modules/.bin/mocha -r ts-node/register test/index.ts -R tap",
       "protocol": "tap"
     }
   },

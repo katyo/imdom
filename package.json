@@ -1,45 +1,13 @@
 {
-  "name": "imdom",
+  "private": true,
   "version": "0.1.0",
-  "description": "Immediate mode virtual DOM library.",
-  "main": "index.js",
-  "typings": "index.d.ts",
-  "module": "es/index.js",
-  "scripts": {
-    "build": "npm run build-es && npm run build-js",
-    "clean": "npm run clean-es && npm run clean-js",
-    "build-es": "tsc --outDir es --module es6",
-    "clean-es": "rm -rf es",
-    "build-js": "tsc --outDir .",
-    "clean-js": "rm -rf *.d.ts *.js *.js.map",
-    "prepare": "npm run build",
-    "build-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
-    "clean-test": "rm -f test-out.js",
-    "test": "testem ci",
-    "test-node": "mocha -r ts-node/register test/node.ts -R spec",
-    "test-dev": "testem",
-    "doc.md": "typedoc --out doc.md --theme markdown src",
-    "doc": "typedoc src",
-    "doc.json": "typedoc --json doc.json src"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/katyo/imdom"
-  },
-  "keywords": [
-    "virtual-dom",
-    "client",
-    "server",
-    "literium",
-    "framework",
-    "typescript",
-    "es6",
-    "es2015"
+  "workspaces": [
+    "packages/*"
   ],
-  "author": "K. <kayo@illumium.org>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/katyo/literium/issues"
+  "scripts": {
+    "build": "for pkg in packages/*; do cd $pkg && npm run build && cd -; done",
+    "clean": "for pkg in packages/*; do cd $pkg && npm run clean && cd -; done",
+    "test": "for pkg in packages/*; do cd $pkg && npm run test && cd -; done"
   },
   "devDependencies": {
     "@types/jsdom": "^12",
@@ -55,7 +23,15 @@
     "typedoc": "^0.14",
     "typedoc-plugin-external-module-name": "^2",
     "typedoc-plugin-markdown": "^1",
-    "typescript": "^3"
+    "typescript": "^3",
+    "@babel/cli": "^7",
+    "@babel/core": "^7",
+    "@babel/helper-plugin-test-runner": "^7",
+    "@babel/plugin-syntax-jsx": "^7",
+    "@babel/preset-env": "^7",
+    "@babel/register": "^7",
+    "babel-jest": "^24",
+    "jest": "^24"
   },
   "dependencies": {
     "tslib": "^1"
