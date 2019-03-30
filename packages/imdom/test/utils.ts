@@ -1,11 +1,11 @@
 import { ok, strictEqual as se } from 'assert';
-import { DomNameSpace, create_text, create_comment, create_element } from '../src/index';
+import { create_text, create_comment, create_element, set_attr, add_class } from '../src/index';
 
 describe('dom', () => {
     describe('create_text', () => {
         it('empty', () => {
             const t0 = '';
-            const n0 = create_text(document, t0);
+            const n0 = create_text(t0);
 
             ok(n0);
             se(n0.nodeType, 3);
@@ -14,7 +14,7 @@ describe('dom', () => {
 
         it('non empty', () => {
             const t0 = 'some text content';
-            const n0 = create_text(document, t0);
+            const n0 = create_text(t0);
 
             ok(n0);
             se(n0.nodeType, 3);
@@ -25,7 +25,7 @@ describe('dom', () => {
     describe('create_comment', () => {
         it('empty', () => {
             const t0 = '';
-            const n0 = create_comment(document, t0);
+            const n0 = create_comment(t0);
 
             ok(n0);
             se(n0.nodeType, 8);
@@ -34,7 +34,7 @@ describe('dom', () => {
 
         it('non empty', () => {
             const t0 = 'some comment';
-            const n0 = create_comment(document, t0);
+            const n0 = create_comment(t0);
 
             ok(n0);
             se(n0.nodeType, 8);
@@ -44,7 +44,7 @@ describe('dom', () => {
 
     describe('create_element', () => {
         it('html tag', () => {
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'span' });
+            const n0 = create_element('span');
 
             ok(n0);
             se(n0.tagName, 'SPAN');
@@ -52,7 +52,8 @@ describe('dom', () => {
 
         it('html tag with id', () => {
             const i0 = 'some-id';
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'div', i: i0 });
+            const n0 = create_element('div');
+            set_attr(n0, 'id', i0);
 
             ok(n0);
             se(n0.tagName, 'DIV');
@@ -62,7 +63,8 @@ describe('dom', () => {
 
         it('html tag with class', () => {
             const c0 = 'some-class';
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'span', c: {[c0]: true} });
+            const n0 = create_element('span');
+            add_class(n0, c0);
 
             ok(n0);
             se(n0.tagName, 'SPAN');
@@ -74,7 +76,9 @@ describe('dom', () => {
         it('html tag with classes', () => {
             const c0 = 'some-class';
             const c1 = 'other-class';
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'span', c: {[c0]: true, [c1]: true} });
+            const n0 = create_element('span');
+            add_class(n0, c0);
+            add_class(n0, c1);
 
             ok(n0);
             se(n0.tagName, 'SPAN');
@@ -86,7 +90,8 @@ describe('dom', () => {
 
         it('html tag with key', () => {
             const k0 = 'some-key';
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'i', k: k0 });
+            const n0 = create_element('i');
+            set_attr(n0, 'data-key', k0);
 
             ok(n0);
             se(n0.tagName, 'I');
@@ -97,7 +102,9 @@ describe('dom', () => {
         it('html tag with id and class', () => {
             const i0 = 'some-id';
             const c0 = 'some-class';
-            const n0 = create_element(document, { n: DomNameSpace.XHTML, t: 'div', i: i0, c: {[c0]: true} });
+            const n0 = create_element('div');
+            set_attr(n0, 'id', i0);
+            add_class(n0, c0);
 
             ok(n0);
             se(n0.tagName, 'DIV');

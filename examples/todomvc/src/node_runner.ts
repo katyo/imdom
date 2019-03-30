@@ -8,31 +8,31 @@ const { window: { Node } } = new JSDOM(doctype);
 };
 */
 
-import "raf/polyfill";
-import "undom/register";
+process.env.JS_TARGET = 'server';
 
-import { parse, patch, end, NOOP } from 'imdom';
+//import "raf/polyfill";
+
+import { patch, end, NOOP, prepare, format } from 'imdom';
 import { Init, View, render } from './core';
 import { store } from './store';
 
 const now = typeof performance == 'undefined' ? () => Date.now() : () => performance.now();
 
-export function runner<State, Args extends any[]>(init: Init<State, Args>, view: View<State, Args>): (elm: Element, ...args: Args) => void {
-    return (elm: Element, ...args: Args) => {
+export function runner<State, Args extends any[]>(init: Init<State, Args>, view: View<State, Args>): (...args: Args) => () => string {
+    return (...args: Args) => {
         const state = store<State, void>(NOOP, undefined);
-        const frag = parse(elm);
+        const frag = prepare();
 
         init(state, ...args);
 
-        redraw();
-
-        function redraw() {
+        return () => {
             const start = now();
             patch(frag);
             render(view, state, ...args);
             end();
             const stop = now();
             console.log('patch ', (stop - start).toPrecision(3), 'mS');
-        }
+            return format(frag);
+        };
     };
 }

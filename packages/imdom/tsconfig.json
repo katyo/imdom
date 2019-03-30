@@ -1,18 +1,7 @@
 {
-  "extends": "../../tsconfig.checks.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "module": "es6",
-    "sourceMap": true,
-    "declaration": false,
-    "removeComments": false,
-    "importHelpers": true,
-    "noEmitHelpers": true,
-    "lib": [
-      "dom",
-      "es2015",
-      "es2018"
-    ]
+    "module": "commonjs"
   },
   "typedocOptions": {
     "name": "ImDOM",
@@ -23,8 +12,5 @@
     "excludePrivate": true,
     "excludeProtected": true,
     "hideGenerator": true
-  },
-  "files": [
-    "src/index.ts"
-  ]
+  }
 }

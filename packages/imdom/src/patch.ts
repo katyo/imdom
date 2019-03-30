@@ -3,17 +3,9 @@
  */
 
 import { DomTxnId, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
-import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, parse_selector, NULL, NOOP } from './utils';
+import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, parse_selector, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
-import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './domop';
-import { BROWSER } from './decls';
-
-let doc: Document = document;
-
-/** Initialize library */
-export function init(doc_: Document = document) {
-    doc = doc_;
-}
+import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './uniop';
 
 export interface State {
     // element
@@ -85,10 +77,10 @@ function remove(node: DomNode, parent: Node) {
 function stack_pop() {
     state.$._ = reconcile(
         state.r,
-        BROWSER ? replace : NOOP,
-        BROWSER ? prepend : NOOP,
-        BROWSER ? append : NOOP,
-        BROWSER ? remove : NOOP,
+        replace,
+        prepend,
+        append,
+        remove,
         state.$.$
     ); // reconcile children
 
@@ -116,7 +108,7 @@ function stack_pop() {
 
 function create_text_node(str: string): DomText {
     return {
-        $: BROWSER ? create_text(doc, str) : NULL as unknown as Text,
+        $: create_text(str),
         f: DomFlags.Text,
         t: str,
     };
@@ -124,7 +116,7 @@ function create_text_node(str: string): DomText {
 
 function create_comment_node(str: string): DomComment {
     return {
-        $: BROWSER ? create_comment(doc, str) : NULL as unknown as Comment,
+        $: create_comment(str),
         f: DomFlags.Comment,
         t: str,
     };
@@ -132,7 +124,7 @@ function create_comment_node(str: string): DomComment {
 
 function create_doctype_node(dt: DomDocTypeSpec): DomDocType {
     return {
-        $: BROWSER ? create_doctype(doc, dt) : NULL as unknown as DocumentType,
+        $: create_doctype(dt),
         f: DomFlags.DocType,
         d: dt,
     };
@@ -174,9 +166,15 @@ export function tag(selector: string, key?: DomKey) {
     let elm = reuse_node(state.r, match_element, sel, true) as DomElement | void;
 
     if (!elm) { // when virtual element missing
+        const node = create_element(sel.t, sel.n ? ns_uri_map[sel.n] : NULL); // create new DOM node
+
+        if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present
+        if (sel.c) for (const name in sel.c) add_class(node, name); // add classes when present
+        if (is_defined(sel.k)) set_attr(node, 'data-key', sel.k); // set key attribute when present
+
         push_node(state.r, elm = { // create new virtual node
             f: DomFlags.Element,
-            $: BROWSER ? create_element(doc, sel) : NULL as unknown as Element,
+            $: node,
             x: sel,
             a: {},
             c: {},
@@ -213,9 +211,7 @@ export function end() {
             const attr = elm.a[name];
             if (attr.t < txnid) { // when attribute is not set in current transaction
                 delete elm.a[name]; // remove attribute entry from virtual element
-                if (BROWSER) {
-                    remove_attr(node, name, attr.v); // remove attribute from DOM element
-                }
+                remove_attr(node, name, attr.v); // remove attribute from DOM element
             }
         }
 
@@ -223,9 +219,7 @@ export function end() {
         for (const name in elm.c) {
             if (elm.c[name] < txnid) { // when class is not added in current transaction
                 delete elm.c[name]; // remove class entry from virtual element
-                if (BROWSER) {
-                    remove_class(node, name); // remove class from DOM element
-                }
+                remove_class(node, name); // remove class from DOM element
             }
         }
 
@@ -233,9 +227,7 @@ export function end() {
         for (const name in elm.s) {
             if (elm.s[name].t < txnid) { // when style is not set in current transaction
                 delete elm.s[name]; // remove style entry from virtual element
-                if (BROWSER) {
-                    remove_style(node, name); // remove style from DOM element
-                }
+                remove_style(node, name); // remove style from DOM element
             }
         }
     }
@@ -246,13 +238,13 @@ export function end() {
 /** Put text node */
 export function text(str: string) {
     if (str) { // when string is not empty
-        push_text(is_text, create_text_node, BROWSER ? update_text : NOOP, str); // push text node
+        push_text(is_text, create_text_node, update_text, str); // push text node
     }
 }
 
 /** Put comment node */
 export function comment(str: string) {
-    push_text(is_comment, create_comment_node, BROWSER ? update_text : NOOP, str); // push comment node
+    push_text(is_comment, create_comment_node, update_text, str); // push comment node
 }
 
 /** Put document type node */
@@ -281,9 +273,7 @@ export function iattr<A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) 
     if (elm.a[name]) { // when attribute is listed in mutable set
         delete elm.a[name]; // remove it from mutable set
     } else { // when attribute is missing
-        if (BROWSER) {
-            set_attr(elm.$, name, val); // set attribute of DOM element
-        }
+        set_attr(elm.$, name, val); // set attribute of DOM element
     }
 }
 
@@ -295,17 +285,13 @@ export function attr<A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) {
     if (ent) { // when attribute already set
         if (ent.v != val) { // when value changed
             // update value and set attribute of DOM element
-            if (BROWSER) {
-                set_attr(elm.$, name, ent.v = val);
-            }
+            set_attr(elm.$, name, ent.v = val);
         }
         // update txn id to prevent removing attribute from DOM element
         ent.t = txnid;
     } else { // when attribute is missing
         elm.a[name] = { v: val, t: txnid }; // create new attribute record
-        if (BROWSER) {
-            set_attr(elm.$, name, val); // set attribute of DOM element
-        }
+        set_attr(elm.$, name, val); // set attribute of DOM element
     }
 }
 
@@ -329,9 +315,7 @@ export function istyle<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]
     if (elm.s[name]) { // when style is listed in mutable set
         delete elm.s[name]; // remove it from mutable set
     } else { // when style is missing
-        if (BROWSER) {
-            set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
-        }
+        set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
     }
 }
 
@@ -343,17 +327,13 @@ export function style<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S])
     if (ent) { // when style already set
         if (ent.v != val) { // when value changed
             // update value and set style of DOM element
-            if (BROWSER) {
-                set_style(elm.$ as HTMLElement, name, ent.v = val);
-            }
+            set_style(elm.$ as HTMLElement, name, ent.v = val);
         }
         // update txn id to prevent removing style from DOM element
         ent.t = txnid;
     } else { // when style is missing
         elm.s[name] = { v: val, t: txnid }; // create new style entry
-        if (BROWSER) {
-            set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
-        }
+        set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
     }
 }
 
@@ -363,10 +343,8 @@ export function style<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S])
    Only immutable event listeners is supported.
 */
 export function ievent<E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) {
-    if (BROWSER) {
-        const elm = state.$ as DomElement; // get current element from state
-        add_event(elm.$, name, fn); // attach event listener to DOM element
-    }
+    const elm = state.$ as DomElement; // get current element from state
+    add_event(elm.$, name, fn); // attach event listener to DOM element
 }
 
 /**

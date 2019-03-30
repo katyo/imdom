@@ -61,7 +61,7 @@ function learn() {
     tag('aside.learn'); {
         tag('header'); {
             tag('h3'); {
-                text('IDOM TodoMVC');
+                text('ImDOM TodoMVC');
             } end();
             tag('span.source-links'); {
                 for (const { title, links } of source_links) {
@@ -85,7 +85,7 @@ function learn() {
         tag('hr'); end();
         tag('blockquote.quote.speech-bubble'); {
             tag('p'); {
-                text('Literium is an ultra-light client-side framework for modern Web-application. Its core principles are explicit state, controllable behavior, declarative code, efficiency, simplicity and flexibility.');
+                text('This example demonstrates TodoMVC implementation using ImDOM library and simple lens-based storage.');
             } end();
         } end();
         tag('footer'); {
