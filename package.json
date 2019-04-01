@@ -10,11 +10,19 @@
     "test": "for pkg in packages/*; do cd $pkg && npm run test && cd -; done"
   },
   "devDependencies": {
+    "@babel/cli": "^7",
+    "@babel/core": "^7",
+    "@babel/helper-plugin-test-runner": "^7",
+    "@babel/plugin-syntax-jsx": "^7",
+    "@babel/preset-env": "^7",
+    "@babel/register": "^7",
     "@types/jsdom": "^12",
     "@types/mocha": "^5",
     "@types/node": "^8",
     "aiden-doc": "^1",
+    "babel-jest": "^24",
     "browserify": "^16",
+    "jest": "^24",
     "jsdom": "^13",
     "mocha": "^5",
     "testem": "^2",
@@ -23,15 +31,7 @@
     "typedoc": "^0.14",
     "typedoc-plugin-external-module-name": "^2",
     "typedoc-plugin-markdown": "^1",
-    "typescript": "^3",
-    "@babel/cli": "^7",
-    "@babel/core": "^7",
-    "@babel/helper-plugin-test-runner": "^7",
-    "@babel/plugin-syntax-jsx": "^7",
-    "@babel/preset-env": "^7",
-    "@babel/register": "^7",
-    "babel-jest": "^24",
-    "jest": "^24"
+    "typescript": "^3"
   },
   "dependencies": {
     "tslib": "^1"

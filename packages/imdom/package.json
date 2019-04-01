@@ -18,6 +18,7 @@
     "clean:test": "rm -f test-out.js",
     "test:ci": "../../node_modules/.bin/testem ci",
     "test:dev": "../../node_modules/.bin/testem",
+    "test:fast": "npm run test:node && npm run test:ssr",
     "test:node": "../../node_modules/.bin/mocha -r ts-node/register test/node.ts -R spec",
     "test:ssr": "../../node_modules/.bin/mocha -r ts-node/register test/ssr.ts -R spec",
     "doc": "../../node_modules/.bin/typedoc src",
