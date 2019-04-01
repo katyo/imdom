@@ -1,0 +1,19 @@
+{
+  "extends": "../tsconfig.checks.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": false,
+    "removeComments": false,
+    "importHelpers": true,
+    "noEmitHelpers": true,
+    "lib": [
+      "dom",
+      "es2015",
+      "es2018"
+    ]
+  },
+  "files": [
+    "src/index.ts"
+  ]
+}

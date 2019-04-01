@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "test": "npm run test:node",
+    "build:test": "../node_modules/.bin/browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
+    "clean:test": "rm -f test-out.js",
+    "test:node": "../node_modules/.bin/ts-node test/index.ts"
+  }
+}
