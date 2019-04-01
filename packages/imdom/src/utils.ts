@@ -94,7 +94,10 @@ export function parse_selector(sel: string): DomSelector {
         //n: ns_i && parse_ns(sel.substring(0, ns_i)) || DomNamespace.XHTML,
         //t: sel.substring(ns_i ? ns_i + 1 : 0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div'
         n: DomNameSpace.XHTML,
-        t: sel.substring(0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div'
+        t: sel.substring(0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div',
+        i: NULL,
+        c: NULL,
+        k: NULL,
     };
     if (id_i >= 0) res.i = sel.substring(id_i + 1, cls_i >= 0 ? cls_i : sel.length);
     if (cls_i >= 0) res.c = parse_classes(sel.substring(cls_i + 1, sel.length));
@@ -120,7 +123,7 @@ export function build_classes(cls: DomClassSet, sep: string = ' ') {
 
 /** Check when required classes exists in all classes */
 function has_classes(req: string[], all: DomClassSet): boolean {
-    for (const name of req) if (!(name in all)) return false;
+    for (const name of req) if (!all[name]) return false;
     return true;
 }
 

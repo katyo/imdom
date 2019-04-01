@@ -206,14 +206,17 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
             s: {},
             _: []
         });
-    } else if (!is_attached(elm)) { // when element is exists but not attached
+    } else if (!is_attached(elm) && sel.c) { // when element is exists but not attached
         const cls = elm.x.c; // get classes from element selector
 
         if (cls) { // when element has classes in selector
+            for (const name of sel.c) { // iterate over classes in current selector
+                cls[name] = false; // remove class from element selector
+            }
+
             // move all classes which missing in selector to mutable class set
-            for (const name in cls) {
-                if (!sel.c || !(name in sel.c)) { // class not used in selector
-                    delete cls[name]; // remove class from element selector
+            for (const name in cls) { // iterate over classes in element selector
+                if (!cls[name]) { // class not used in current selector
                     elm.c[name] = txnid; // add class to element mutable class set
                 }
             }
@@ -231,27 +234,29 @@ export function end() {
     if (elm.f & DomFlags.Element) { // when current subject is element
         const node = elm.$ as HTMLElement; // get associated DOM element
 
+        const { a: attrs, c: classes, s: styles } = elm;
+
         // remove outdated attributes
-        for (const name in elm.a) {
-            const attr = elm.a[name];
-            if (attr.t < txnid) { // when attribute is not set in current transaction
-                delete elm.a[name]; // remove attribute entry from virtual element
+        for (const name in attrs) {
+            const attr = attrs[name];
+            if (attr && attr.t < txnid) { // when attribute is not set in current transaction
+                attrs[name] = NULL; // remove attribute entry from virtual element
                 remove_attr(node, name, attr.v); // remove attribute from DOM element
             }
         }
 
         // remove outdated classes
-        for (const name in elm.c) {
-            if (elm.c[name] < txnid) { // when class is not added in current transaction
-                delete elm.c[name]; // remove class entry from virtual element
+        for (const name in classes) {
+            if (classes[name] && classes[name]! < txnid) { // when class is not added in current transaction
+                classes[name] = NULL; // remove class entry from virtual element
                 remove_class(node, name); // remove class from DOM element
             }
         }
 
         // remove outdated styles
-        for (const name in elm.s) {
-            if (elm.s[name].t < txnid) { // when style is not set in current transaction
-                delete elm.s[name]; // remove style entry from virtual element
+        for (const name in styles) {
+            if (styles[name] && styles[name]!.t < txnid) { // when style is not set in current transaction
+                styles[name] = NULL; // remove style entry from virtual element
                 remove_style(node, name); // remove style from DOM element
             }
         }
@@ -296,7 +301,7 @@ export function iattr<A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) 
     const elm = state.$ as DomElement; // get current element from state
 
     if (elm.a[name]) { // when attribute is listed in mutable set
-        delete elm.a[name]; // remove it from mutable set
+        elm.a[name] = NULL; // remove it from mutable set
     } else { // when attribute is missing
         set_attr(elm.$, name, val); // set attribute of DOM element
     }
@@ -338,7 +343,7 @@ export function istyle<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]
     const elm = state.$ as DomElement; // get current element from state
 
     if (elm.s[name]) { // when style is listed in mutable set
-        delete elm.s[name]; // remove it from mutable set
+        elm.s[name] = NULL; // remove it from mutable set
     } else { // when style is missing
         set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
     }

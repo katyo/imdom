@@ -110,14 +110,14 @@ export interface DomSelector {
 
        The value of attribute `id`.
     */
-    i?: string;
+    i: string | undefined;
 
     /**
        Selector-specific classes
 
        Some part of value of attribute `class`.
     */
-    c?: DomClassSet;
+    c: DomClassSet | undefined;
 
     /**
        Key
@@ -126,7 +126,7 @@ export interface DomSelector {
 
        This value stored in `data-key` attribute.
     */
-    k?: DomKey;
+    k: DomKey | undefined;
 }
 
 /** Key type */
@@ -141,13 +141,13 @@ export const enum DomNameSpace {
 }
 
 /** Set of classes in selector */
-export type DomClassSet = Record<string, true>;
+export type DomClassSet = Record<string, boolean>;
 
 /** Transaction identifier */
 export type DomTxnId = number;
 
 /** Set of attributes */
-export type DomAttrs = Record<DomAttrName, DomAttr<DomAttrName>>;
+export type DomAttrs = Record<DomAttrName, DomAttr<DomAttrName> | undefined>;
 
 /** Map of available attributes */
 export type DomAttrMap = Record<DomAttrName, DomAttrVal>;
@@ -167,7 +167,7 @@ export interface DomAttr<A extends DomAttrName> {
 export type DomAttrVal = string | number | boolean | undefined | void;
 
 /** Set of styles */
-export type DomStyles = Record<DomStyleName, DomStyle<DomStyleVal>>;
+export type DomStyles = Record<DomStyleName, DomStyle<DomStyleVal> | undefined>;
 //export type DomStyles = { [K in DomStyleName]: DomStyle } & Record<string, DomStyle>;
 
 /** Single style */
@@ -189,7 +189,7 @@ export type DomStyleName = string;
 export type DomStyleVal = string;
 
 /** Set of classes */
-export type DomClasses = Record<string, DomClass>;
+export type DomClasses = Record<string, DomClass | undefined>;
 
 /** Single class */
 export type DomClass = DomTxnId;
