@@ -1,4 +1,4 @@
-import { tag, end, text, once, iattr, attr, ievent } from 'imdom';
+import { _, tag, end, text, once, iattr, attr, ievent } from 'imdom';
 import { Store, get, set, over, lens, adjust, remove } from './store';
 import { render } from './core';
 import { KeyCode } from './keys';
@@ -96,15 +96,15 @@ export function view(store: Store<State>) {
         if (!tasks[$].completed) active ++;
     }
 
-    tag('section.todoapp'); {
-        tag('header.header'); {
+    tag('section', _, 'todoapp'); {
+        tag('header', _, 'header'); {
             tag('h1'); {
                 text('todos');
             } end();
-            tag('input.new-todo'); {
+            tag('input', _, 'new-todo'); {
                 if (once()) {
                     iattr('placeholder', 'What needs to be done?');
-                    iattr('autofocus', true);
+                    iattr('autofocus');
                     ievent('keydown', e => {
                         const input = e.target as HTMLInputElement;
                         if (input.value != '' && e.keyCode == KeyCode.Enter) {
@@ -117,8 +117,8 @@ export function view(store: Store<State>) {
             } end();
 
             if (all) {
-                tag('section.main'); {
-                    tag('input#toggle-all.toggle-all'); {
+                tag('section', _, 'main'); {
+                    tag('input', 'toggle-all', 'toggle-all'); {
                         if (once()) {
                             iattr('type', 'checkbox');
                             ievent('click', () => {
@@ -135,7 +135,7 @@ export function view(store: Store<State>) {
                         }
                         text('Mark all as complete');
                     } end();
-                    tag('ul.todo-list'); {
+                    tag('ul', _, 'todo-list'); {
                         const task_filter = task_filters[filter];
                         for (const $ in tasks) {
                             if (task_filter(tasks[$])) {
@@ -146,20 +146,20 @@ export function view(store: Store<State>) {
                 } end();
             }
         } end();
-        tag('footer.footer'); {
-            tag('span.todo-count'); {
+        tag('footer', _, 'footer'); {
+            tag('span', _, 'todo-count'); {
                 tag('strong'); {
                     text('' + active);
                 } end();
                 text(` item${active == 1 ? '' : 's'} left`);
             } end();
-            tag('ul.filters'); {
+            tag('ul', _, 'filters'); {
                 for (let i = 0; i < filters.length; i++) {
                     render(Filter.view, lens(store, 'filters', i), filter);
                 }
             } end();
             if (all > active) {
-                tag('button.clear-completed'); {
+                tag('button', _, 'clear-completed'); {
                     if (once()) {
                         ievent('click', () => {
                             over(lens(store, 'tasks'), clear_completed);

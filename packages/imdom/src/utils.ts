@@ -7,6 +7,8 @@ import { DomFlags, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, Dom
 /** Undefined value */
 export const NULL = void 0;
 
+export { NULL as _ };
+
 /** Empty string constant */
 export const EMPTY_STRING = '';
 

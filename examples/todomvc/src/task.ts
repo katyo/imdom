@@ -1,4 +1,4 @@
-import { tag, end, text, once, elem, iattr, ievent, attr, class_ } from 'imdom';
+import { _, tag, end, text, once, elem, iattr, ievent, attr, class_ } from 'imdom';
 import { Store, get, set, over, toggle, change } from './store';
 import { KeyCode } from './keys';
 
@@ -32,15 +32,15 @@ export function init(store: Store<State>, on: On, { content = "", completed = fa
 export function view(store: Store<State>, key?: number) {
     const { content, completed, editing } = get(store);
 
-    tag('li', key); {
+    tag('li', _, _, key); {
         if (completed) {
             class_('completed');
         }
         if (editing) {
             class_('editing');
         }
-        tag('div.view'); {
-            tag('input.toggle'); {
+        tag('div', _, 'view'); {
+            tag('input', _, 'toggle'); {
                 if (once()) {
                     iattr('type', 'checkbox');
                     ievent('change', () => {
@@ -59,7 +59,7 @@ export function view(store: Store<State>, key?: number) {
                 }
                 text(content);
             } end();
-            tag('button.destroy'); {
+            tag('button', _, 'destroy'); {
                 if (once()) {
                     ievent('click', () => {
                         get(store).on.remove();
@@ -67,7 +67,7 @@ export function view(store: Store<State>, key?: number) {
                 }
             } end();
         } end();
-        tag('input.edit'); {
+        tag('input', _, 'edit'); {
             if (once()) {
                 ievent('blur', e => {
                     over(store, change({

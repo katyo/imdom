@@ -109,10 +109,10 @@ describe('patch', () => {
             const elm2 = elm.childNodes[1];
             vdom = parse(elm);
             patch(vdom);
-            tag('p#main');
+            tag('p', 'main');
             text('main text');
             end();
-            tag('p.desc');
+            tag('p', _, 'desc');
             text('description');
             end();
             end();
@@ -149,7 +149,7 @@ describe('patch', () => {
                 elm.appendChild(elm1);
                 vdom = parse(elm);
                 patch(vdom);
-                tag('span#id');
+                tag('span', 'id');
                 end();
                 end();
 
@@ -162,7 +162,7 @@ describe('patch', () => {
 
             it('has id', () => {
                 patch(vdom);
-                tag('div#unique');
+                tag('div', 'unique');
                 end();
                 end();
 
@@ -195,7 +195,7 @@ describe('patch', () => {
 
                 // verify that svg tag with extra selectors gets svg namespace
                 patch(vdom);
-                tag('svg#some-id');
+                tag('svg', 'some-id');
                 end();
                 end();
 
@@ -212,7 +212,7 @@ describe('patch', () => {
 
             it('receives classes in selector', () => {
                 patch(vdom);
-                tag('i.am.a.class');
+                tag('i', _, ['am', 'a', 'class']);
                 end();
                 end();
 
@@ -247,7 +247,7 @@ describe('patch', () => {
             it('receives classes in selector when namespaced', () => {
                 patch(vdom);
                 tag('svg');
-                tag('g.am.a.class.too');
+                tag('g', _, ['am', 'a', 'class', 'too']);
                 end();
                 end();
                 end();
@@ -285,7 +285,7 @@ describe('patch', () => {
             it('handles classes from both selector and property', () => {
                 patch(vdom);
                 tag('div');
-                tag('i.has');
+                tag('i', _, 'has');
                 class_('classes');
                 end();
                 end();
@@ -429,7 +429,7 @@ describe('patch', () => {
                     text(n);
                     end();
                 } else if (n != null) {
-                    tag('span', n);
+                    tag('span', _, _, n);
                     text('' + n);
                     end();
                 }
@@ -546,7 +546,7 @@ describe('patch', () => {
                     patch(vdom);
                     tag('span', 'span');
                     spanNum(1);
-                    tag('i', 2);
+                    tag('i', _, _, 2);
                     text('2');
                     end();
                     spanNum(3);

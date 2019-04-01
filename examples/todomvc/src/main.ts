@@ -1,15 +1,14 @@
 import { Store, set, lens } from './store';
-import { tag, end, iattr, text, once, class_ } from 'imdom';
+import { _, tag, end, iattr, text, once, class_ } from 'imdom';
 import { render } from './core';
-import { page_lite } from './page';
+import { PropsLite, page_lite } from './page';
 import * as Todo from './todo';
 
-const page_props = {
+const page_props: Partial<PropsLite> = {
     styles: [{ link: `client_${process.env.npm_package_version}.min.css` }],
     scripts: [{ link: `client_${process.env.npm_package_version}.min.js` }],
     settings: { viewport: "width=device-width, initial-scale=1" },
     title: "TodoMVC",
-    body: ['class', 'learn-bar'],
 };
 
 export interface State {
@@ -58,12 +57,12 @@ const source_links: SourceLinksGroup[] = [
 ];
 
 function learn() {
-    tag('aside.learn'); {
+    tag('aside', _, 'learn'); {
         tag('header'); {
             tag('h3'); {
                 text('ImDOM TodoMVC');
             } end();
-            tag('span.source-links'); {
+            tag('span', _, 'source-links'); {
                 for (const { title, links } of source_links) {
                     tag('h5'); {
                         text(title);
@@ -71,7 +70,7 @@ function learn() {
                     let n = 0;
                     for (const { title, url, kind, local } of links) {
                         if (n++) text(', ');
-                        tag('a' + (kind ? `.${kind}-link` : ''));
+                        tag('a', _, (kind ? `${kind}-link` : _));
                         if (once()) {
                             iattr('href', url);
                             iattr('data-type', local ? 'local' : false);
@@ -83,7 +82,7 @@ function learn() {
             } end();
         } end();
         tag('hr'); end();
-        tag('blockquote.quote.speech-bubble'); {
+        tag('blockquote', _, ['quote', 'speech-bubble']); {
             tag('p'); {
                 text('This example demonstrates TodoMVC implementation using ImDOM library and simple lens-based storage.');
             } end();
@@ -105,7 +104,7 @@ function learn() {
 }
 
 function footer() {
-    tag('footer.info'); {
+    tag('footer', _, 'info'); {
         tag('p'); {
             text('Created by ');
             tag('a'); {

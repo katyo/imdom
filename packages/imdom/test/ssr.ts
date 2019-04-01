@@ -1,7 +1,7 @@
 process.env.JS_TARGET = "server";
 
 import { strictEqual as se } from 'assert';
-import { prepare, format, doctype, patch, tag, end, once, iattr, attr, class_, istyle, style, text } from '../src/index';
+import { NULL as _, prepare, format, doctype, patch, tag, end, once, iattr, attr, class_, istyle, style, text } from '../src/index';
 
 describe('ssr', () => {
     it('attrs', () => {
@@ -30,7 +30,7 @@ describe('ssr', () => {
 
         function draw(view: boolean) {
             patch(root); {
-                tag('div.main'); {
+                tag('div', _, 'main'); {
                     if (view) {
                         class_('view');
                     }

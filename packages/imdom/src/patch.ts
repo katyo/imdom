@@ -2,8 +2,8 @@
  * @module patch
  */
 
-import { DomTxnId, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
-import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, parse_selector, NULL, NOOP, ns_uri_map } from './utils';
+import { DomTxnId, DomSelector, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
+import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './uniop';
 
@@ -148,18 +148,29 @@ function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => n
 }
 
 /** Open new child element */
-export function tag(selector: string, key?: DomKey) {
-    const sel = parse_selector(selector); // parse selector of opened element
+export function tag(name: string, id?: string, classes?: string | string[], key?: DomKey) {
+    const sel: DomSelector = { // create selector of opened element
+        t: name, // set tag name
+        n: name == 'svg' ? // when tag is 'svg'
+            DomNameSpace.SVG : // set SVG namespace
+            is_element(state.$ as DomNode) // when we have parent element
+            && (state.$ as DomElement).x.t != 'foreignObject' ? // which is not a foreign object
+            (state.$ as DomElement).x.n : // set namespace from parent
+            DomNameSpace.XHTML, // set XHTML namespace by default
+        i: id, // set element id
+        c: NULL,
+        k: key, // set element key
+    };
 
-    if (sel.t == 'svg') { // when tag is 'svg'
-        sel.n = DomNameSpace.SVG; // set SVG namespace
-    } else if (is_element(state.$ as DomNode) // when we have parent element
-               && (state.$ as DomElement).x.t != 'foreignObject') { // which is not a foreign object
-        sel.n = (state.$ as DomElement).x.n; // set namespace from parent
-    }
-
-    if (is_defined(key)) { // when key is provided
-        sel.k = key; // set key in selector
+    if (classes) { // when has classes
+        sel.c = {};
+        if (typeof classes == 'string') { // when classes is string
+            sel.c[classes] = true; // add single class name
+        } else { // when classes is array
+            for (const name of classes) {
+                sel.c[name] = true; // add all classes to selector
+            }
+        }
     }
 
     // try to reuse existing child element using selector
