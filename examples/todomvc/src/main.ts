@@ -82,7 +82,7 @@ function learn() {
             } end();
         } end();
         tag('hr'); end();
-        tag('blockquote', _, ['quote', 'speech-bubble']); {
+        tag('blockquote', _, 'quote', 'speech-bubble'); {
             tag('p'); {
                 text('This example demonstrates TodoMVC implementation using ImDOM library and simple lens-based storage.');
             } end();

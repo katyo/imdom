@@ -2,7 +2,7 @@
  * @module utils
  */
 
-import { DomFlags, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrMap } from './types';
+import { DomFlags, DomKey, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrMap } from './types';
 
 /** Undefined value */
 export const NULL = void 0;
@@ -40,8 +40,17 @@ export function is_doctype(node: DomNode): node is DomDocType {
     return (node.f & DomFlags.DocType) as unknown as boolean;
 }
 
+/** Internal selector (optimal) */
+export interface Selector {
+    t: string;
+    n: DomNameSpace,
+    i: string | undefined,
+    c: string[] | undefined,
+    k: DomKey | undefined,
+}
+
 /** Check when virtual element matched to selector */
-function same_element(elm: DomElement, sel: DomSelector): boolean {
+function same_element(elm: DomElement, sel: Selector): boolean {
     const {x} = elm;
     return x.n == sel.n && // namespace is same
         x.t == sel.t && // tag name is same
@@ -57,7 +66,7 @@ function same_text<T extends DomText | DomComment>(txt: T, str: string): boolean
 }
 
 /** Virtual node is element which matched to selector */
-export function match_element(node: DomNode, sel: DomSelector): node is DomElement {
+export function match_element(node: DomNode, sel: Selector): node is DomElement {
     return is_element(node) && same_element(node, sel);
 }
 
@@ -110,8 +119,8 @@ export function build_classes(cls: DomClassSet, sep: string = ' ') {
 }
 
 /** Check when required classes exists in all classes */
-function has_classes(req: DomClassSet, all: DomClassSet): boolean {
-    for (const name in req) if (!(name in all)) return false;
+function has_classes(req: string[], all: DomClassSet): boolean {
+    for (const name of req) if (!(name in all)) return false;
     return true;
 }
 

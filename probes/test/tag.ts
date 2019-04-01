@@ -8,7 +8,17 @@ interface Selector {
     k?: Key;
 }
 
+type Classes6 = string[];
+
+interface Selector6 {
+    t: string;
+    i: string | undefined;
+    c: Classes6 | undefined;
+    k: Key | undefined;
+}
+
 let s: Selector;
+let s6: Selector6;
 
 const div = 'div';
 const _ = undefined;
@@ -220,6 +230,82 @@ function tag41(t: string, i?: string, c?: Classes, k?: Key) {
         i,
         c,
         k,
+    };
+}
+
+let k: Key | undefined;
+
+function key5(k_?: Key | undefined) {
+    k = k_;
+}
+
+function tag50(t: string, i?: string, ...c: string[]) {
+    s = {
+        t: t || div,
+        i,
+        k: k,
+    };
+
+    if (c) {
+        s.c = {};
+        for (const n of c) {
+            s.c[n] = true;
+        }
+    }
+}
+
+function tag51(t: string, i?: string, c1?: string, c2?: string, c3?: string, c4?: string, ...cs: string[]) {
+    s = {
+        t: t || div,
+        i,
+        k: k,
+    };
+
+    if (c1) {
+        s.c = {};
+        s.c[c1] = true;
+        if (c2) {
+            s.c[c2] = true;
+            if (c3) {
+                s.c[c3] = true;
+                if (c4) {
+                    s.c[c4] = true;
+                    if (cs) {
+                        s.c = {};
+                        for (const n of cs) {
+                            s.c[n] = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+function tag60(t: string, i?: string, ...c: string[]) {
+    s6 = {
+        t: t || div,
+        i,
+        c,
+        k: k,
+    };
+}
+
+function tag61(t: string, i?: string, c1?: string, c2?: string, c3?: string, ...c: string[]) {
+    s6 = {
+        t: t || div,
+        i,
+        c: !c1 ? _ : !c2 ? [c1] : !c3 ? [c1, c2] : !c.length ? [c1, c2, c3] : [c1, c2, c3, ...c],
+        k: k,
+    };
+}
+
+function tag62(t: string, i?: string, c1?: string, c2?: string, c3?: string, ...c: string[]) {
+    s6 = {
+        t: t || div,
+        i,
+        c: c1 ? c2 ? c3 ? c.length ? [c1, c2, c3, ...c] : [c1, c2, c3] : [c1, c2] : [c1] : _,
+        k: k,
     };
 }
 
@@ -444,5 +530,224 @@ bench(suite => suite
               tag41('div', 'id', {class: true}, 'a');
               tag41('div', 'id', {class1: true, class2: true}, 'a');
               tag41('div', 'id', {class1: true, class2: true, class3: true}, 'a');
+          }
+      })
+      .add('tag v5.0', () => {
+          for (let i = 0; i < 100; i++) {
+              tag50('span');
+              tag50('div', 'id');
+              tag50('div', _, 'class');
+              tag50('div', 'id', 'class');
+              tag50('div', 'id', 'class1', 'class2');
+              tag50('div', 'id', 'class1', 'class2', 'class3');
+              key5(1);
+              tag50('span');
+              key5(1);
+              tag50('div', 'id');
+              key5(1);
+              tag50('div', _, 'class');
+              key5(1);
+              tag50('div', 'id', 'class');
+              key5(1);
+              tag50('div', 'id', 'class1', 'class2');
+              key5(1);
+              tag50('div', 'id', 'class1', 'class2', 'class3');
+              key5('a');
+              tag50('span');
+              key5('a');
+              tag50('div', 'id');
+              key5('a');
+              tag50('div', _, 'class');
+              key5('a');
+              tag50('div', 'id', 'class');
+              key5('a');
+              tag50('div', 'id', 'class1', 'class2');
+              key5('a');
+              tag50('div', 'id', 'class1', 'class2', 'class3');
+          }
+      })
+      .add('tag v5.1', () => {
+          for (let i = 0; i < 100; i++) {
+              tag51('span');
+              tag51('div', 'id');
+              tag51('div', _, 'class');
+              tag51('div', 'id', 'class');
+              tag51('div', 'id', 'class1', 'class2');
+              tag51('div', 'id', 'class1', 'class2', 'class3');
+              key5(1);
+              tag51('span');
+              key5();
+              key5(1);
+              tag51('div', 'id');
+              key5();
+              key5(1);
+              tag51('div', _, 'class');
+              key5();
+              key5(1);
+              tag51('div', 'id', 'class');
+              key5();
+              key5(1);
+              tag51('div', 'id', 'class1', 'class2');
+              key5();
+              key5(1);
+              tag51('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+              key5('a');
+              tag51('span');
+              key5();
+              key5('a');
+              tag51('div', 'id');
+              key5();
+              key5('a');
+              tag51('div', _, 'class');
+              key5();
+              key5('a');
+              tag51('div', 'id', 'class');
+              key5();
+              key5('a');
+              tag51('div', 'id', 'class1', 'class2');
+              key5();
+              key5('a');
+              tag51('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+          }
+      })
+      .add('tag v6.0', () => {
+          s6;
+          for (let i = 0; i < 100; i++) {
+              tag60('span');
+              tag60('div', 'id');
+              tag60('div', _, 'class');
+              tag60('div', 'id', 'class');
+              tag60('div', 'id', 'class1', 'class2');
+              tag60('div', 'id', 'class1', 'class2', 'class3');
+              key5(1);
+              tag60('span');
+              key5();
+              key5(1);
+              tag60('div', 'id');
+              key5();
+              key5(1);
+              tag60('div', _, 'class');
+              key5();
+              key5(1);
+              tag60('div', 'id', 'class');
+              key5();
+              key5(1);
+              tag60('div', 'id', 'class1', 'class2');
+              key5();
+              key5(1);
+              tag60('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+              key5('a');
+              tag60('span');
+              key5();
+              key5('a');
+              tag60('div', 'id');
+              key5();
+              key5('a');
+              tag60('div', _, 'class');
+              key5();
+              key5('a');
+              tag60('div', 'id', 'class');
+              key5();
+              key5('a');
+              tag60('div', 'id', 'class1', 'class2');
+              key5();
+              key5('a');
+              tag60('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+          }
+      })
+      .add('tag v6.1', () => {
+          for (let i = 0; i < 100; i++) {
+              tag61('span');
+              tag61('div', 'id');
+              tag61('div', _, 'class');
+              tag61('div', 'id', 'class');
+              tag61('div', 'id', 'class1', 'class2');
+              tag61('div', 'id', 'class1', 'class2', 'class3');
+              key5(1);
+              tag61('span');
+              key5();
+              key5(1);
+              tag61('div', 'id');
+              key5();
+              key5(1);
+              tag61('div', _, 'class');
+              key5();
+              key5(1);
+              tag61('div', 'id', 'class');
+              key5();
+              key5(1);
+              tag61('div', 'id', 'class1', 'class2');
+              key5();
+              key5(1);
+              tag61('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+              key5('a');
+              tag61('span');
+              key5();
+              key5('a');
+              tag61('div', 'id');
+              key5();
+              key5('a');
+              tag61('div', _, 'class');
+              key5();
+              key5('a');
+              tag61('div', 'id', 'class');
+              key5();
+              key5('a');
+              tag61('div', 'id', 'class1', 'class2');
+              key5();
+              key5('a');
+              tag61('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+          }
+      })
+      .add('tag v6.2', () => {
+          for (let i = 0; i < 100; i++) {
+              tag62('span');
+              tag62('div', 'id');
+              tag62('div', _, 'class');
+              tag62('div', 'id', 'class');
+              tag62('div', 'id', 'class1', 'class2');
+              tag62('div', 'id', 'class1', 'class2', 'class3');
+              key5(1);
+              tag62('span');
+              key5();
+              key5(1);
+              tag62('div', 'id');
+              key5();
+              key5(1);
+              tag62('div', _, 'class');
+              key5();
+              key5(1);
+              tag62('div', 'id', 'class');
+              key5();
+              key5(1);
+              tag62('div', 'id', 'class1', 'class2');
+              key5();
+              key5(1);
+              tag62('div', 'id', 'class1', 'class2', 'class3');
+              key5();
+              key5('a');
+              tag62('span');
+              key5();
+              key5('a');
+              tag62('div', 'id');
+              key5();
+              key5('a');
+              tag62('div', _, 'class');
+              key5();
+              key5('a');
+              tag62('div', 'id', 'class');
+              key5();
+              key5('a');
+              tag62('div', 'id', 'class1', 'class2');
+              key5();
+              key5('a');
+              tag62('div', 'id', 'class1', 'class2', 'class3');
+              key5();
           }
       }));

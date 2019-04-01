@@ -1,5 +1,5 @@
 import { ok, strictEqual as se, notStrictEqual as nse, notEqual as ne } from 'assert';
-import { NULL as _, DomElement, DomText, DomComment, parse, patch, end, tag, text, once, comment, iattr, class_, create_element, create_text } from '../src/index';
+import { NULL as _, DomElement, DomText, DomComment, parse, patch, end, key, tag, text, once, comment, iattr, class_, create_element, create_text } from '../src/index';
 
 describe('patch', () => {
     let elm: Element;
@@ -212,7 +212,7 @@ describe('patch', () => {
 
             it('receives classes in selector', () => {
                 patch(vdom);
-                tag('i', _, ['am', 'a', 'class']);
+                tag('i', _, 'am', 'a', 'class');
                 end();
                 end();
 
@@ -247,7 +247,7 @@ describe('patch', () => {
             it('receives classes in selector when namespaced', () => {
                 patch(vdom);
                 tag('svg');
-                tag('g', _, ['am', 'a', 'class', 'too']);
+                tag('g', _, 'am', 'a', 'class', 'too');
                 end();
                 end();
                 end();
@@ -429,9 +429,11 @@ describe('patch', () => {
                     text(n);
                     end();
                 } else if (n != null) {
-                    tag('span', _, _, n);
+                    key(n);
+                    tag('span');
                     text('' + n);
                     end();
+                    key();
                 }
             }
 
@@ -546,9 +548,11 @@ describe('patch', () => {
                     patch(vdom);
                     tag('span', 'span');
                     spanNum(1);
-                    tag('i', _, _, 2);
+                    key(2);
+                    tag('i');
                     text('2');
                     end();
+                    key();
                     spanNum(3);
                     end();
                     end();

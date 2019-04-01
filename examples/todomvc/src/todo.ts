@@ -1,4 +1,4 @@
-import { _, tag, end, text, once, iattr, attr, ievent } from 'imdom';
+import { _, key, tag, end, text, once, iattr, attr, ievent } from 'imdom';
 import { Store, get, set, over, lens, adjust, remove } from './store';
 import { render } from './core';
 import { KeyCode } from './keys';
@@ -139,9 +139,11 @@ export function view(store: Store<State>) {
                         const task_filter = task_filters[filter];
                         for (const $ in tasks) {
                             if (task_filter(tasks[$])) {
-                                render(Task.view, lens(store, 'tasks', +$), +$);
+                                key(+$);
+                                render(Task.view, lens(store, 'tasks', +$));
                             }
                         }
+                        key();
                     } end();
                 } end();
             }

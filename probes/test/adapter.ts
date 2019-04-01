@@ -7,7 +7,7 @@ if (typeof window != 'undefined') {
 
 const print: (...args: any[]) => void =
     typeof window != 'undefined' ? (...args) => {
-        document.body.innerHTML += `<p>${String(args)}</p>`;
+        document.body.innerHTML += `<div>${String(args)}</div>`;
     } : (...args) => {
         console.log(...args);
     };

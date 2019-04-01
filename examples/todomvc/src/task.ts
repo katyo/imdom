@@ -29,10 +29,10 @@ export function init(store: Store<State>, on: On, { content = "", completed = fa
     });
 }
 
-export function view(store: Store<State>, key?: number) {
+export function view(store: Store<State>) {
     const { content, completed, editing } = get(store);
 
-    tag('li', _, _, key); {
+    tag('li'); {
         if (completed) {
             class_('completed');
         }

@@ -2,8 +2,8 @@
  * @module patch
  */
 
-import { DomTxnId, DomSelector, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
-import { is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
+import { DomTxnId, DomClassSet, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
+import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './uniop';
 
@@ -12,6 +12,8 @@ export interface State {
     $: DomElement | DomFragment,
     // reconciler
     r: Reconciler<DomNode>,
+    // current key
+    k: DomKey | undefined,
     // fragment capturing stack
     //f:
 }
@@ -24,6 +26,7 @@ function stack_push($: DomElement | DomFragment) {
     stack.push(state = {
         $, // place fragment or element at stack
         r: use_nodes($._),
+        k: NULL,
     });
 }
 
@@ -147,9 +150,14 @@ function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => n
     }
 }
 
+/** Set current key for children elements */
+export function key(k?: DomKey | undefined) {
+    state.k = k;
+}
+
 /** Open new child element */
-export function tag(name: string, id?: string, classes?: string | string[], key?: DomKey) {
-    const sel: DomSelector = { // create selector of opened element
+export function tag(name: string, id?: string, class1?: string, class2?: string, class3?: string, ...classes: string[]) {
+    const sel: Selector = { // create selector of opened element
         t: name, // set tag name
         n: name == 'svg' ? // when tag is 'svg'
             DomNameSpace.SVG : // set SVG namespace
@@ -158,35 +166,41 @@ export function tag(name: string, id?: string, classes?: string | string[], key?
             (state.$ as DomElement).x.n : // set namespace from parent
             DomNameSpace.XHTML, // set XHTML namespace by default
         i: id, // set element id
-        c: NULL,
-        k: key, // set element key
+        c: !class1 ? NULL : // set element classes
+            !class2 ? [class1] : // one class is present
+            !class3 ? [class1, class2] : // two classes is present
+            !classes.length ? [class1, class2, class3] : // three classes is present
+            [class1, class2, class3, ...classes], // several classes is present
+        k: state.k, // set element key
     };
-
-    if (classes) { // when has classes
-        sel.c = {};
-        if (typeof classes == 'string') { // when classes is string
-            sel.c[classes] = true; // add single class name
-        } else { // when classes is array
-            for (const name of classes) {
-                sel.c[name] = true; // add all classes to selector
-            }
-        }
-    }
 
     // try to reuse existing child element using selector
     let elm = reuse_node(state.r, match_element, sel, true) as DomElement | void;
 
     if (!elm) { // when virtual element missing
         const node = create_element(sel.t, sel.n ? ns_uri_map[sel.n] : NULL); // create new DOM node
+        let class_set: DomClassSet | undefined;
 
         if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present
-        if (sel.c) for (const name in sel.c) add_class(node, name); // add classes when present
+        if (sel.c) { // when classes is present
+            class_set = {};
+            for (const name of sel.c) { // for classes
+                class_set[name] = true; // set class in selector
+                add_class(node, name); // add class name
+            }
+        }
         if (is_defined(sel.k)) set_attr(node, 'data-key', sel.k); // set key attribute when present
 
         push_node(state.r, elm = { // create new virtual node
             f: DomFlags.Element,
             $: node,
-            x: sel,
+            x: {
+                t: sel.t,
+                n: sel.n,
+                i: sel.i,
+                c: class_set,
+                k: sel.k,
+            },
             a: {},
             c: {},
             s: {},
