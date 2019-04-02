@@ -31,7 +31,7 @@ function parse_element(node: Element): DomElement {
         x: node_selector(node as Element), // set selector
         a: parse_attrs((node as Element).attributes), // initially all attributes treated as mutable
         c: {}, // initially all classes sits in selector
-        s: parse_style((node as HTMLElement).style), // initially all styles treated as mutable
+        s: parse_style((node as Element).getAttribute('style')), // initially all styles treated as mutable
         _: parse_children(node.childNodes) // parse children nodes
     };
 }
@@ -82,15 +82,21 @@ function parse_attrs(node_attrs: NamedNodeMap): DomAttrs {
     return attrs;
 }
 
-function parse_style(style: CSSStyleDeclaration): DomStyles {
+const cssPropRE = /\s*([^:\s]+)\s*:\s*([^;\s]+)\s*;?/g;
+
+function parse_style(style: string | null): DomStyles {
     const styles = {} as DomStyles;
     if (style) {
-        for (let i = 0; i < style.length; i++) {
-            const name = style[i];
-            styles[name] = {
-                v: style.getPropertyValue(name),
-                t: 0,
-            };
+        for (;;) {
+            const m = cssPropRE.exec(style);
+            if (m) {
+                styles[m[1]] = {
+                    v: m[2],
+                    t: 0,
+                };
+            } else {
+                break;
+            }
         }
     }
     return styles;

@@ -134,25 +134,33 @@ describe('parse', () => {
 
     describe('styles', () => {
         const elm = document.createElement('div');
-        elm.innerHTML = '<div style="left: 0; top: 15%; margin-right: -11pt; padding-bottom: 22px;"></div><span style="display:none"></span>';
+        elm.innerHTML = '<div style="left: 0; top: 15%; margin-right: -11pt; padding-bottom: 22px;"></div><span style="display:none"></span><div style="border-radius :4px;background:#f0f"></div>';
         const vdom = parse(elm);
 
         const n1 = vdom._[0] as DomElement;
         const n2 = vdom._[1] as DomElement;
+        const n3 = vdom._[2] as DomElement;
 
         it('enumeration', () => {
             dse(Object.keys(n1.s), ['left', 'top', 'margin-right', 'padding-bottom']);
             dse(Object.keys(n2.s), ['display']);
+            dse(Object.keys(n3.s), ['border-radius', 'background']);
         });
 
         it('values', () => {
             dse(n1.s, {
-                left: { v: '0px', t: 0 },
+                left: { v: '0', t: 0 },
                 top: { v: '15%', t: 0 },
                 'margin-right': { v: '-11pt', t: 0 },
                 'padding-bottom': { v: '22px', t: 0 },
             });
+
             dse(n2.s, { display: { v: 'none', t: 0 } });
+
+            dse(n3.s, {
+                'border-radius': { v: '4px', t: 0 },
+                'background': { v: '#f0f', t: 0 },
+            });
         });
     });
 });
