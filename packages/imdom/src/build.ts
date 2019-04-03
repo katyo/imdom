@@ -3,42 +3,38 @@
  *  HTML rendering functions
  */
 
-import { DomNode, DomFlags, DomFragment, DomElement } from './types';
-import { NULL, is_element, is_doctype, is_text } from './utils';
-import { StubNode, StubElement, StubDocType, StubText, StubComment, StubFragment, StubClasses, StubAttrs, StubStyles } from './ssrop';
+import { DomNode, DomFlags, DomFragment, DomElement, DomDocType, DomText, DomClassSet, DomClasses, DomAttrs, DomStyles } from './types';
+import { NULL, is_defined, is_element, is_doctype, is_text } from './utils';
 
 /** Prepare empty DOM fragment for rendering to */
 export function prepare(): DomFragment {
     return {
+        $: NULL as unknown as Element,
         f: DomFlags.Empty,
-        $: {
-            _: NULL,
-            $: NULL,
-        } as StubFragment as unknown as Element,
         _: [],
     };
 }
 
 /** Stringify fragment to HTML */
 export function format(elm: DomFragment | DomElement): string {
-    return (elm.$ as unknown as StubNode).f ? format_element("", elm.$ as unknown as StubElement) : format_children("", (elm.$ as unknown as StubFragment)._);
+    return is_element(elm as DomNode) ? format_element("", elm as DomElement) : format_children("", elm._);
 }
 
-function format_children(out: string, child: StubNode | undefined): string {
-    for (; child; child = child.n) {
+function format_children(out: string, children: DomNode[]): string {
+    for (const child of children) {
         out = format_node(out, child);
     }
     return out;
 }
 
-function format_node(out: string, node: StubNode): string {
-    return is_element(node as unknown as DomNode) ? format_element(out, node as StubElement) :
-        is_doctype(node as unknown as DomNode) ? format_doctype(out, node as StubDocType) :
-        out + (is_text(node as unknown as DomNode) ? escape_text((node as StubText).t) :
-               `<!--${escape_text((node as StubComment).t)}-->`);
+function format_node(out: string, node: DomNode): string {
+    return is_element(node) ? format_element(out, node) :
+        is_doctype(node) ? format_doctype(out, node) :
+        out + (is_text(node) ? escape_text(node.t) :
+               `<!--${escape_text(node.t)}-->`);
 }
 
-function format_doctype(out: string, {d}: StubDocType): string {
+function format_doctype(out: string, {d}: DomDocType): string {
     out += `<!DOCTYPE ${d.n}`;
     if (d.p) {
         out += ` PUBLIC "${escape_attr(d.p)}" "${escape_attr(d.s)}">`;
@@ -71,69 +67,100 @@ const void_tag = /^(?:area|b(?:ase|r)|col|embed|hr|i(?:mg|nput)|keygen|link|meta
 
 const code_tag = /^(?:s(?:cript|tyle))$/;
 
-function format_element(out: string, elm: StubElement): string {
-    out += `<${elm.t}`;
+function format_element(out: string, elm: DomElement): string {
+    const sel = elm.x;
+    const tag = sel.t;
 
-    out = format_classes(out, elm.c);
+    out += `<${tag}`;
+
+    if (sel.i) {
+        out += ` id="${escape_attr(sel.i)}"`;
+    }
+    out = format_classes(out, sel.c, elm.c);
+    if (sel.k) {
+        out += ` data-key="${escape_attr(sel.k)}"`;
+    }
     out = format_attrs(out, elm.a);
     out = format_styles(out, elm.s);
 
-    if (elm._) {
+    if (elm._.length) {
         out += '>';
-        if (code_tag.test(elm.t)) {
-            for (let node = elm._; node; node = node.n!) {
+        if (code_tag.test(tag)) {
+            for (const node of elm._) {
                 if (is_text(node as unknown as DomNode)) {
-                    out += escape_code((node as StubText).t);
+                    out += escape_code((node as DomText).t);
                 }
             }
         } else {
             out = format_children(out, elm._);
         }
-        out += `</${elm.t}>`;
+        out += `</${tag}>`;
     } else {
-        out += void_tag.test(elm.t) ? '>' : `></${elm.t}>`;
+        out += void_tag.test(tag) ? '>' : `></${tag}>`;
     }
 
     return out;
 }
 
-function format_classes(out: string, classes: StubClasses): string {
+function format_classes(out: string, class_set: DomClassSet | undefined, classes: DomClasses): string {
+    let once = false;
+    if (class_set) {
+        for (const name in class_set) {
+            if (class_set[name]) {
+                if (once) {
+                    out += ` ${escape_attr(name)}`
+                } else {
+                    once = true;
+                    out += ` class="${escape_attr(name)}`;
+                }
+            }
+        }
+    }
     for (const name in classes) {
-        out += ` class="${escape_attr(name)}`;
-        let nxt = false;
-        for (const name in classes) {
-            if (nxt) {
+        if (classes[name]) {
+            if (once) {
                 out += ` ${escape_attr(name)}`
             } else {
-                nxt = true;
+                once = true;
+                out += ` class="${escape_attr(name)}`;
             }
         }
+    }
+    if (once) {
         out += '"';
-        break;
     }
     return out;
 }
 
-function format_attrs(out: string, attrs: StubAttrs): string {
+function format_attrs(out: string, attrs: DomAttrs): string {
     for (const name in attrs) {
-        out += ` ${name}="${escape_attr(attrs[name])}"`;
+        const attr = attrs[name];
+        if (attr) {
+            if (is_defined(attr.v)) {
+                out += ` ${name}="${escape_attr(attr.v)}"`;
+            } else {
+                out += ` ${name}`;
+            }
+        }
     }
     return out;
 }
 
-function format_styles(out: string, styles: StubStyles): string {
+function format_styles(out: string, styles: DomStyles): string {
+    let once = false;
     for (const name in styles) {
-        out += ` style="${escape_attr(name)}:${escape_attr(styles[name])}`;
-        let nxt = false;
-        for (const name in styles) {
-            if (nxt) {
-                out += `;${escape_attr(name)}:${escape_attr(styles[name])}`;
+        const style = styles[name];
+        if (style) {
+            if (once) {
+                out += `;${escape_attr(name)}:${escape_attr(style.v)}`;
             } else {
-                nxt = true;
+                once = true;
+                out += ` style="${escape_attr(name)}:${escape_attr(style.v)}`;
             }
         }
+    }
+    if (once) {
         out += '"';
-        break;
     }
     return out;
 }
@@ -193,8 +220,8 @@ export function escape_text(text: string | number): string {
  * @returns Escaped attribute value
  */
 function escape_attr(text: string | number): string {
-    if (typeof text === "string") {
-        if (text.indexOf("\"") === -1 && text.indexOf("&") === -1) {
+    if (typeof text == "string") {
+        if (text.indexOf("\"") == -1 && text.indexOf("&") == -1) {
             return text;
         }
 

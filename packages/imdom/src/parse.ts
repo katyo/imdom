@@ -66,7 +66,7 @@ function parse_children(nodes: NodeListOf<Node>, i: number = 0, n: number = node
     return children;
 }
 
-const SPECIAL_ATTR_RE = /id|class|style/;
+const SPECIAL_ATTR_RE = /id|class|style|data\-key/;
 
 function parse_attrs(node_attrs: NamedNodeMap): DomAttrs {
     const attrs = {} as DomAttrs;

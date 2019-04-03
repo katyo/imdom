@@ -16,3 +16,13 @@ export const BROWSER = process.env.JS_TARGET != 'server';
  * Enable tracing DOM operations
  */
 export const TRACE_DOM = process.env.DOM_TRACE;
+
+/**
+ * Enable benchmarking DOM operations
+ */
+export const BENCH_DOM = process.env.DOM_BENCH;
+
+/**
+ * Enable reconciler benchmarking
+ */
+export const BENCH_REUSE = process.env.REUSE_BENCH;

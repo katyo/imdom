@@ -50,7 +50,7 @@ const source_links: SourceLinksGroup[] = [
         links: [
             {
                 title: 'Source',
-                url: 'https://github.com/katyo/literium/tree/master/examples/todomvc',
+                url: 'https://github.com/katyo/imdom/tree/master/examples/todomvc',
             }
         ]
     }
@@ -73,7 +73,9 @@ function learn() {
                         tag('a', _, (kind ? `${kind}-link` : _));
                         if (once()) {
                             iattr('href', url);
-                            iattr('data-type', local ? 'local' : false);
+                            if (local) {
+                                iattr('data-type', 'local');
+                            }
                         }
                         text(title);
                         end();
@@ -93,7 +95,7 @@ function learn() {
                 text('If you found unexpected behavior in example, or you have something helpful ideas, please ');
                 tag('a'); {
                     if (once()) {
-                        iattr('href', 'https://github.com/katyo/literium/issues');
+                        iattr('href', 'https://github.com/katyo/imdom/issues');
                     }
                     text('let me know');
                 } end();

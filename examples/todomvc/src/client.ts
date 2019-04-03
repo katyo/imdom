@@ -1,6 +1,6 @@
 import 'raf-polyfill';
 import './style.css';
 import { runner } from './runner';
-import * as Main from './main';
+import { init, view } from './main';
 
-runner(Main.init, Main.view)(document);
+runner(init, view)(document);

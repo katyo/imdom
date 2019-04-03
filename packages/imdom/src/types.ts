@@ -164,7 +164,7 @@ export interface DomAttr<A extends DomAttrName> {
 }
 
 /** Attribute value */
-export type DomAttrVal = string | number | boolean | undefined | void;
+export type DomAttrVal = string | number | undefined;
 
 /** Set of styles */
 export type DomStyles = Record<DomStyleName, DomStyle<DomStyleVal> | undefined>;

@@ -2,10 +2,11 @@
  * @module patch
  */
 
+import { BROWSER } from './decls';
 import { DomTxnId, DomClassSet, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
 import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
-import { create_element, create_text, create_comment, create_doctype, set_text, replace_node, prepend_node, append_node, remove_node, add_class, remove_class, set_style, remove_style, set_attr, remove_attr, add_event } from './uniop';
+import * as dom from './domop';
 
 export interface State {
     // element
@@ -56,34 +57,38 @@ function attach(node: DomNode) {
     }
 }
 
-function replace(node: DomNode, rep: DomNode, parent: Node) {
-    detach(rep);
-    replace_node(parent, node.$, rep.$); // replace DOM node
-    attach(node);
-}
+const replace_node: (node: DomNode, rep: DomNode, parent: Node) => void =
+    BROWSER ? (node, rep, parent) => {
+        detach(rep);
+        dom.replace_node(parent, node.$, rep.$); // replace DOM node
+        attach(node);
+    } : NOOP;
 
-function prepend(node: DomNode, ref: DomNode, parent: Node) {
-    prepend_node(parent, node.$, ref.$); // prepend DOM node
-    attach(node);
-}
+const prepend_node: (node: DomNode, ref: DomNode, parent: Node) => void =
+    BROWSER ? (node, ref, parent) => {
+        dom.prepend_node(parent, node.$, ref.$); // prepend DOM node
+        attach(node);
+    } : NOOP;
 
-function append(node: DomNode, ref: DomNode | undefined, parent: Node) {
-    append_node(parent, node.$, ref ? ref.$ : NULL); // append DOM node
-    attach(node);
-}
+const append_node: (node: DomNode, ref: DomNode | undefined, parent: Node) => void =
+    BROWSER ? (node, ref, parent) => {
+        dom.append_node(parent, node.$, ref ? ref.$ : NULL); // append DOM node
+        attach(node);
+    } : NOOP;
 
-function remove(node: DomNode, parent: Node) {
-    detach(node);
-    remove_node(parent, node.$); // remove DOM node
-}
+const remove_node: (node: DomNode, parent: Node) => void =
+    BROWSER ? (node, parent) => {
+        detach(node);
+        dom.remove_node(parent, node.$); // remove DOM node
+    } : NOOP;
 
 function stack_pop() {
     state.$._ = reconcile(
         state.r,
-        replace,
-        prepend,
-        append,
-        remove,
+        replace_node,
+        prepend_node,
+        append_node,
+        remove_node,
         state.$.$
     ); // reconcile children
 
@@ -100,45 +105,109 @@ function stack_pop() {
     }
 
     state = stack[stack.length - 1]; // update reference to current state
-
-    /*if (stack.length) {
-        state = stack[stack.length - 1]; // update reference to current state
-    } else {
-        attach(state.$ as DomNode);
-        state = NULL as unknown as State;
-    }*/
 }
 
-function create_text_node(str: string): DomText {
-    return {
-        $: create_text(str),
+const create_text: (str: string) => DomText =
+    BROWSER ? (str) => ({
+        $: dom.create_text(str),
         f: DomFlags.Text,
         t: str,
-    };
-}
+    }) : (str) => ({
+        $: NULL as unknown as Text,
+        f: DomFlags.Text,
+        t: str,
+    });
 
-function create_comment_node(str: string): DomComment {
-    return {
-        $: create_comment(str),
+const create_comment: (str: string) => DomComment =
+    BROWSER ? (str) => ({
+        $: dom.create_comment(str),
         f: DomFlags.Comment,
         t: str,
-    };
-}
+    }) : (str) => ({
+        $: NULL as unknown as Comment,
+        f: DomFlags.Comment,
+        t: str,
+    });
 
-function create_doctype_node(dt: DomDocTypeSpec): DomDocType {
-    return {
-        $: create_doctype(dt),
+const create_doctype: (dt: DomDocTypeSpec) => DomDocType =
+    BROWSER ? (dt) => ({
+        $: dom.create_doctype(dt),
         f: DomFlags.DocType,
         d: dt,
+    }) : (dt) => ({
+        $: NULL as unknown as DocumentType,
+        f: DomFlags.DocType,
+        d: dt,
+    });
+
+const create_element: (sel: Selector) => DomElement =
+    BROWSER ? (sel) => {
+        const node = dom.create_element(sel.t, sel.n ? ns_uri_map[sel.n] : NULL); // create new DOM node
+        let class_set: DomClassSet | undefined;
+
+        if (is_defined(sel.i)) dom.set_attr(node, 'id', sel.i); // set id attribute when present
+
+        if (sel.c) { // when classes is present
+            class_set = {}; // initialize selector classes
+            for (const name of sel.c) { // for classes
+                class_set[name] = true; // set class in selector
+                dom.add_class(node, name); // add class name
+            }
+        }
+
+        if (is_defined(sel.k)) { // when key is present
+            dom.set_attr(node, 'data-key', sel.k); // set key attribute when present
+        }
+
+        return { // create new virtual node
+            $: node,
+            f: DomFlags.Element,
+            x: {
+                t: sel.t,
+                n: sel.n,
+                i: sel.i,
+                c: class_set,
+                k: sel.k,
+            },
+            a: {},
+            c: {},
+            s: {},
+            _: []
+        };
+    } : (sel) => {
+        let class_set: DomClassSet | undefined;
+
+        if (sel.c) { // when classes is present
+            class_set = {}; // initialize selector classes
+            for (const name of sel.c) { // for classes
+                class_set[name] = true; // set class in selector
+            }
+        }
+
+        return { // create new virtual node
+            $: NULL as unknown as Element,
+            f: DomFlags.Element,
+            x: {
+                t: sel.t,
+                n: sel.n,
+                i: sel.i,
+                c: class_set,
+                k: sel.k,
+            },
+            a: {},
+            c: {},
+            s: {},
+            _: []
+        };
     };
-}
 
 /** Update string content of text node */
-export function update_text<T extends DomText | DomComment>(node: T, str: string) {
-    if (node.t != str) {
-        set_text(node.$, node.t = str);
-    }
-}
+const update_text: <T extends DomText | DomComment>(node: T, str: string) => void =
+    BROWSER ? (node, str) => {
+        if (node.t != str) {
+            dom.set_text(node.$, node.t = str);
+        }
+    } : NOOP;
 
 function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => node is N, create: (ctx: Ctx) => N, update: (node: N, ctx: Ctx) => void, ctx: Ctx) {
     let elm = reuse_node(state.r, match, ctx, false) as N | void; // try to reuse next node using match function
@@ -178,34 +247,7 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
     let elm = reuse_node(state.r, match_element, sel, true) as DomElement | void;
 
     if (!elm) { // when virtual element missing
-        const node = create_element(sel.t, sel.n ? ns_uri_map[sel.n] : NULL); // create new DOM node
-        let class_set: DomClassSet | undefined;
-
-        if (is_defined(sel.i)) set_attr(node, 'id', sel.i); // set id attribute when present
-        if (sel.c) { // when classes is present
-            class_set = {};
-            for (const name of sel.c) { // for classes
-                class_set[name] = true; // set class in selector
-                add_class(node, name); // add class name
-            }
-        }
-        if (is_defined(sel.k)) set_attr(node, 'data-key', sel.k); // set key attribute when present
-
-        push_node(state.r, elm = { // create new virtual node
-            f: DomFlags.Element,
-            $: node,
-            x: {
-                t: sel.t,
-                n: sel.n,
-                i: sel.i,
-                c: class_set,
-                k: sel.k,
-            },
-            a: {},
-            c: {},
-            s: {},
-            _: []
-        });
+        push_node(state.r, elm = create_element(sel)); // create new virtual node
     } else if (!is_attached(elm) && sel.c) { // when element is exists but not attached
         const cls = elm.x.c; // get classes from element selector
 
@@ -228,58 +270,89 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
 }
 
 /** Close openned element or finalize patching */
-export function end() {
-    const elm = state.$ as DomElement; // get current element from state
+export const end: () => void =
+    BROWSER ? () => {
+        const elm = state.$ as DomElement; // get current element from state
 
-    if (elm.f & DomFlags.Element) { // when current subject is element
-        const node = elm.$ as HTMLElement; // get associated DOM element
+        if (elm.f & DomFlags.Element) { // when current subject is element
+            const node = elm.$ as HTMLElement; // get associated DOM element
+            const { a: attrs, c: classes, s: styles } = elm;
 
-        const { a: attrs, c: classes, s: styles } = elm;
+            // remove outdated classes
+            for (const name in classes) {
+                if (classes[name] && classes[name]! < txnid) { // when class is not added in current transaction
+                    classes[name] = NULL; // remove class entry from virtual element
+                    dom.remove_class(node, name); // remove class from DOM element
+                }
+            }
 
-        // remove outdated attributes
-        for (const name in attrs) {
-            const attr = attrs[name];
-            if (attr && attr.t < txnid) { // when attribute is not set in current transaction
-                attrs[name] = NULL; // remove attribute entry from virtual element
-                remove_attr(node, name, attr.v); // remove attribute from DOM element
+            // remove outdated attributes
+            for (const name in attrs) {
+                const attr = attrs[name];
+                if (attr && attr.t < txnid) { // when attribute is not set in current transaction
+                    attrs[name] = NULL; // remove attribute entry from virtual element
+                    dom.remove_attr(node, name, attr.v); // remove attribute from DOM element
+                }
+            }
+
+            // remove outdated styles
+            for (const name in styles) {
+                if (styles[name] && styles[name]!.t < txnid) { // when style is not set in current transaction
+                    styles[name] = NULL; // remove style entry from virtual element
+                    dom.remove_style(node, name); // remove style from DOM element
+                }
             }
         }
 
-        // remove outdated classes
-        for (const name in classes) {
-            if (classes[name] && classes[name]! < txnid) { // when class is not added in current transaction
-                classes[name] = NULL; // remove class entry from virtual element
-                remove_class(node, name); // remove class from DOM element
+        stack_pop(); // pop state from stack
+    } : () => {
+        const elm = state.$ as DomElement; // get current element from state
+
+        if (elm.f & DomFlags.Element) { // when current subject is element
+            const { a: attrs, c: classes, s: styles } = elm;
+
+            // remove outdated classes
+            for (const name in classes) {
+                if (classes[name] && classes[name]! < txnid) { // when class is not added in current transaction
+                    classes[name] = NULL; // remove class entry from virtual element
+                }
+            }
+
+                // remove outdated attributes
+            for (const name in attrs) {
+                const attr = attrs[name];
+                if (attr && attr.t != 0 && attr.t < txnid) { // when attribute is not set in current transaction
+                    attrs[name] = NULL; // remove attribute entry from virtual element
+                }
+            }
+
+            // remove outdated styles
+            for (const name in styles) {
+                const style = styles[name];
+                if (style && style.t != 0 && style.t < txnid) { // when style is not set in current transaction
+                    styles[name] = NULL; // remove style entry from virtual element
+                }
             }
         }
 
-        // remove outdated styles
-        for (const name in styles) {
-            if (styles[name] && styles[name]!.t < txnid) { // when style is not set in current transaction
-                styles[name] = NULL; // remove style entry from virtual element
-                remove_style(node, name); // remove style from DOM element
-            }
-        }
-    }
-
-    stack_pop(); // pop state from stack
-}
+        stack_pop(); // pop state from stack
+    };
 
 /** Put text node */
 export function text(str: string) {
     if (str) { // when string is not empty
-        push_text(is_text, create_text_node, update_text, str); // push text node
+        push_text(is_text, create_text, update_text, str); // push text node
     }
 }
 
 /** Put comment node */
 export function comment(str: string) {
-    push_text(is_comment, create_comment_node, update_text, str); // push comment node
+    push_text(is_comment, create_comment, update_text, str); // push comment node
 }
 
 /** Put document type node */
 export function doctype(qualifiedName: string, publicId: string = '', systemId: string = '') {
-    push_text(match_doctype, create_doctype_node, NOOP, {n: qualifiedName, p: publicId, s: systemId}); // push document type node
+    push_text(match_doctype, create_doctype, NOOP, {n: qualifiedName, p: publicId, s: systemId}); // push document type node
 }
 
 /** Get current opened DOM element */
@@ -297,85 +370,133 @@ export function once(): boolean {
 }
 
 /** Put immutable attribute */
-export function iattr<A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) {
-    const elm = state.$ as DomElement; // get current element from state
+export const iattr: <A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) => void =
+    BROWSER  ? (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
 
-    if (elm.a[name]) { // when attribute is listed in mutable set
-        elm.a[name] = NULL; // remove it from mutable set
-    } else { // when attribute is missing
-        set_attr(elm.$, name, val); // set attribute of DOM element
-    }
-}
+        if (elm.a[name]) { // when attribute is listed in mutable set
+            elm.a[name] = NULL; // remove it from mutable set
+        } else { // when attribute is missing
+            dom.set_attr(elm.$, name, val); // set attribute of DOM element
+        }
+    } : (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+
+        if (!elm.a[name]) { // when attribute is missing
+            elm.a[name] = { v: val, t: 0 }; // add it into attributes set
+        }
+    };
 
 /** Put mutable attribute */
-export function attr<A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) {
-    const elm = state.$ as DomElement; // get current element from state
-    const ent = elm.a[name]; // get attribute entry from set of mutable attributes
+export const attr: <A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) => void =
+    BROWSER ? (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+        const ent = elm.a[name]; // get attribute entry from set of mutable attributes
 
-    if (ent) { // when attribute already set
-        if (ent.v != val) { // when value changed
-            // update value and set attribute of DOM element
-            set_attr(elm.$, name, ent.v = val);
+        if (ent) { // when attribute already set
+            if (ent.v != val) { // when value changed
+                // update value and set attribute of DOM element
+                dom.set_attr(elm.$, name, ent.v = val);
+            }
+            // update txn id to prevent removing attribute from DOM element
+            ent.t = txnid;
+        } else { // when attribute is missing
+            elm.a[name] = { v: val, t: txnid }; // create new attribute record
+            dom.set_attr(elm.$, name, val); // set attribute of DOM element
         }
-        // update txn id to prevent removing attribute from DOM element
-        ent.t = txnid;
-    } else { // when attribute is missing
-        elm.a[name] = { v: val, t: txnid }; // create new attribute record
-        set_attr(elm.$, name, val); // set attribute of DOM element
-    }
-}
+    } : (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+        const ent = elm.a[name]; // get attribute entry from set of mutable attributes
+
+        if (ent) { // when attribute already set
+            if (ent.v != val) { // when value changed
+                // update value and set attribute of DOM element
+                ent.v = val;
+            }
+            // update txn id to prevent removing attribute from DOM element
+            ent.t = txnid;
+        } else { // when attribute is missing
+            elm.a[name] = { v: val, t: txnid }; // create new attribute record
+        }
+    };
 
 /** Add mutable class name */
-export function class_(name: string) {
-    const elm = state.$ as DomElement; // get current element from state
-    const cls = elm.c; // get mutable class set of element
+export const class_: (name: string) => void =
+    BROWSER ? (name) => {
+        const elm = state.$ as DomElement; // get current element from state
+        const cls = elm.c; // get mutable class set of element
 
-    if (!cls[name]) { // when class is missing
-        add_class(elm.$, name); // add class to DOM element classes
-    }
+        if (!cls[name]) { // when class is missing
+            dom.add_class(elm.$, name); // add class to DOM element classes
+        }
 
-    // update txn id to prevent removing class from DOM element
-    cls[name] = txnid;
-}
+        // update txn id to prevent removing class from DOM element
+        cls[name] = txnid;
+    } : (name) => {
+        // update txn id to prevent removing class from DOM element
+        (state.$ as DomElement).c[name] = txnid;
+    };
 
 /** Set immutable style */
-export function istyle<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]) {
-    const elm = state.$ as DomElement; // get current element from state
+export const istyle: <S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]) => void =
+    BROWSER ? (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
 
-    if (elm.s[name]) { // when style is listed in mutable set
-        elm.s[name] = NULL; // remove it from mutable set
-    } else { // when style is missing
-        set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
-    }
-}
+        if (elm.s[name]) { // when style property is listed in mutable set
+            elm.s[name] = NULL; // remove it from mutable set
+        } else { // when style is missing
+            dom.set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
+        }
+    } : (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+
+        if (!elm.s[name]) { // when style property is missing
+            elm.s[name] = { v: val, t: 0 }; // add it into style properties set
+        }
+    };
 
 /** Set mutable style */
-export function style<S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]) {
-    const elm = state.$ as DomElement; // get current element from state
-    const ent = elm.s[name]; // get style entry from set of mutable styles
+export const style: <S extends keyof DomStyleMap>(name: S, val: DomStyleMap[S]) => void =
+    BROWSER ? (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+        const ent = elm.s[name]; // get style entry from set of mutable styles
 
-    if (ent) { // when style already set
-        if (ent.v != val) { // when value changed
-            // update value and set style of DOM element
-            set_style(elm.$ as HTMLElement, name, ent.v = val);
+        if (ent) { // when style already set
+            if (ent.v != val) { // when value changed
+                // update value and set style of DOM element
+                dom.set_style(elm.$ as HTMLElement, name, ent.v = val);
+            }
+            // update txn id to prevent removing style from DOM element
+            ent.t = txnid;
+        } else { // when style is missing
+            elm.s[name] = { v: val, t: txnid }; // create new style entry
+            dom.set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
         }
-        // update txn id to prevent removing style from DOM element
-        ent.t = txnid;
-    } else { // when style is missing
-        elm.s[name] = { v: val, t: txnid }; // create new style entry
-        set_style(elm.$ as HTMLElement, name, val); // set style of DOM element
-    }
-}
+    } : (name, val) => {
+        const elm = state.$ as DomElement; // get current element from state
+        const ent = elm.s[name]; // get style entry from set of mutable styles
+
+        if (ent) { // when style already set
+            if (ent.v != val) { // when value changed
+                // update value and set style of DOM element
+                ent.v = val;
+            }
+            // update txn id to prevent removing style from DOM element
+            ent.t = txnid;
+        } else { // when style is missing
+            elm.s[name] = { v: val, t: txnid }; // create new style entry
+        }
+    };
 
 /**
    Attach event listener to element
 
    Only immutable event listeners is supported.
 */
-export function ievent<E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) {
-    const elm = state.$ as DomElement; // get current element from state
-    add_event(elm.$, name, fn); // attach event listener to DOM element
-}
+export const ievent: <E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) => void =
+    BROWSER ? (name, fn) => {
+        dom.add_event((state.$ as DomElement).$, name, fn); // attach event listener to DOM element
+    } : NOOP;
 
 /**
    Start patching of fragment or element
