@@ -2,7 +2,7 @@
  * @module utils
  */
 
-import { DomFlags, DomKey, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrMap } from './types';
+import { DomFlags, DomKey, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrName, DomAttrType } from './types';
 
 /** Undefined value */
 export const NULL = void 0;
@@ -146,16 +146,16 @@ export function node_selector(elm: Element): DomSelector {
 }
 
 /** Check attribute of DOM element */
-export function has_attr<A extends keyof DomAttrMap>(elm: Element, name: A): boolean {
+export function has_attr<A extends DomAttrName>(elm: Element, name: A): boolean {
     return elm.hasAttribute(name);
 }
 
 /** Get attribute from DOM element */
-export function get_attr<A extends keyof DomAttrMap>(elm: Element, name: A): DomAttrMap[A] | null {
-    return elm.getAttribute(name);
+export function get_attr<A extends DomAttrName>(elm: Element, name: A): DomAttrType<A> | null {
+    return elm.getAttribute(name) as DomAttrType<A> | null;
 }
 
-export function get_attr_str<A extends keyof DomAttrMap>(elm: Element, name: A): string | undefined {
+export function get_attr_str<A extends DomAttrName>(elm: Element, name: A): string | undefined {
     if (has_attr(elm, name)) {
         return get_attr(elm, name) as string;
     }

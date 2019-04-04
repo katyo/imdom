@@ -1,6 +1,6 @@
 import { BROWSER, TRACE_DOM } from './decls';
 import { NULL, EMPTY_STRING, is_defined } from './utils';
-import { DomDocTypeSpec, DomStyleMap, DomAttrMap, DomEventMap, DomEventFn } from './types';
+import { DomDocTypeSpec, DomStyleMap, DomAttrName, DomAttrType, DomEventMap, DomEventFn } from './types';
 
 const doc: Document = (BROWSER && document) as Document;
 
@@ -144,7 +144,7 @@ export function remove_style<S extends keyof DomStyleMap>(elm: HTMLElement, name
 }
 
 /** Set attribute to DOM element */
-export function set_attr<A extends keyof DomAttrMap>(elm: Element, name: A, val: DomAttrMap[A]) {
+export function set_attr<A extends DomAttrName>(elm: Element, name: A, val: DomAttrType<A>) {
     if (TRACE_DOM) {
         trace('set attr', name, '=', `"${val}"`, 'to', elm);
     }

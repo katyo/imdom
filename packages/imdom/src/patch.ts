@@ -3,7 +3,7 @@
  */
 
 import { BROWSER } from './decls';
-import { DomTxnId, DomClassSet, DomNameSpace, DomAttrMap, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey } from './types';
+import { DomTxnId, DomClassSet, DomNameSpace, DomAttrFn, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey, DomAttrName, DomAttrType } from './types';
 import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 import * as dom from './domop';
@@ -370,16 +370,16 @@ export function once(): boolean {
 }
 
 /** Put immutable attribute */
-export const iattr: <A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) => void =
-    BROWSER  ? (name, val) => {
+export const iattr: DomAttrFn =
+    BROWSER ? <A extends DomAttrName>(name: A, val?: DomAttrType<A>) => {
         const elm = state.$ as DomElement; // get current element from state
 
         if (elm.a[name]) { // when attribute is listed in mutable set
             elm.a[name] = NULL; // remove it from mutable set
         } else { // when attribute is missing
-            dom.set_attr(elm.$, name, val); // set attribute of DOM element
+            dom.set_attr(elm.$, name, val as DomAttrType<A>); // set attribute of DOM element
         }
-    } : (name, val) => {
+    } : <A extends DomAttrName>(name: A, val?: DomAttrType<A>) => {
         const elm = state.$ as DomElement; // get current element from state
 
         if (!elm.a[name]) { // when attribute is missing
@@ -388,23 +388,23 @@ export const iattr: <A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) =
     };
 
 /** Put mutable attribute */
-export const attr: <A extends keyof DomAttrMap>(name: A, val?: DomAttrMap[A]) => void =
-    BROWSER ? (name, val) => {
+export const attr: DomAttrFn =
+    BROWSER ? <A extends DomAttrName>(name: A, val?: DomAttrType<A>) => {
         const elm = state.$ as DomElement; // get current element from state
         const ent = elm.a[name]; // get attribute entry from set of mutable attributes
 
         if (ent) { // when attribute already set
             if (ent.v != val) { // when value changed
                 // update value and set attribute of DOM element
-                dom.set_attr(elm.$, name, ent.v = val);
+                dom.set_attr(elm.$, name, ent.v = val as DomAttrType<A>);
             }
             // update txn id to prevent removing attribute from DOM element
             ent.t = txnid;
         } else { // when attribute is missing
             elm.a[name] = { v: val, t: txnid }; // create new attribute record
-            dom.set_attr(elm.$, name, val); // set attribute of DOM element
+            dom.set_attr(elm.$, name, val as DomAttrType<A>); // set attribute of DOM element
         }
-    } : (name, val) => {
+    } : <A extends DomAttrName>(name: A, val?: DomAttrType<A>) => {
         const elm = state.$ as DomElement; // get current element from state
         const ent = elm.a[name]; // get attribute entry from set of mutable attributes
 

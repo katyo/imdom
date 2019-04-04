@@ -147,24 +147,162 @@ export type DomClassSet = Record<string, boolean>;
 export type DomTxnId = number;
 
 /** Set of attributes */
-export type DomAttrs = Record<DomAttrName, DomAttr<DomAttrName> | undefined>;
+export type DomAttrs = { [A in DomAttrName]?: DomAttr<A> };
 
 /** Map of available attributes */
-export type DomAttrMap = Record<DomAttrName, DomAttrVal>;
+export interface DomAttrMap {
+		accept: string;
+		'accept-charset': string;
+		accesskey: string;
+		action: string;
+    allow: string;
+		allowfullscreen: boolean;
+		allowtransparency: boolean;
+		alt: string;
+		async: boolean;
+		autocomplete: string;
+		autocorrect: string;
+		autofocus: boolean;
+		autoplay: boolean;
+		capture: boolean;
+		challenge: string;
+    charset: string;
+		checked: boolean;
+    cite: string;
+		//class: string;
+    code: string;
+    codebase: string;
+    cols: number;
+		colspan: number;
+		content: string;
+		contenteditable: boolean;
+		contextmenu: string;
+		controls: boolean;
+		controlslist: string;
+		coords: string;
+		crossorigin: string;
+		data: string;
+		datetime: string;
+		default: boolean;
+		defer: boolean;
+		dir: string;
+		disabled: boolean;
+		download: boolean;
+		draggable: boolean;
+    dropzone: boolean;
+		enctype?: string;
+    for: string;
+		form: string;
+		formaction: string;
+		headers: string;
+		hidden: boolean;
+		high: number;
+		href: string;
+		hreflang: string;
+		'http-equiv': string;
+		icon: string;
+		//id: string;
+		inputmode: string;
+		integrity: string;
+		is: string;
+    ismap: boolean;
+    itemprop: string;
+		keyparams: string;
+		keytype: string;
+		kind: string;
+		label: string;
+		lang: string;
+		list: string;
+		loop: boolean;
+		low: number;
+		manifest: string;
+		max: number | string;
+		maxlength: number;
+    minlength: number;
+		media: string;
+		mediagroup: string;
+		method: string;
+		min: number | string;
+		multiple: boolean;
+		muted: boolean;
+		name: string;
+		novalidate: boolean;
+		open: boolean;
+		optimum: number;
+		pattern: string;
+    ping: string;
+		placeholder: string;
+		playsinline: boolean;
+		poster: string;
+		preload: string;
+		radiogroup: string;
+		readonly: boolean;
+    referrerpolicy: string;
+		rel: string;
+		required: boolean;
+    reversed: boolean;
+		role: string;
+		rows: number;
+		rowspan: number;
+		sandbox: string;
+		scope: string;
+		scoped: boolean;
+		scrolling: string;
+		seamless: boolean;
+		selected: boolean;
+		shape: string;
+		size: number;
+		sizes: string;
+		slot: string;
+		span: number;
+		spellcheck: boolean;
+		src: string;
+		srcset: string;
+		srcdoc: string;
+		srclang: string;
+		start: number;
+		step: number | string;
+		//style: any;
+		summary: string;
+		tabindex: number;
+		target: string;
+		title: string;
+    translate: string;
+		type: string;
+		usemap: string;
+		value: string | string[] | number;
+		wmode: string;
+		wrap: string;
+}
 
 /** Attribute name */
-export type DomAttrName = string;
+export type DomAttrName = keyof DomAttrMap | string;
+
+/** Boolean attribute name */
+export type DomAttrNameBool = { [A in keyof DomAttrMap]: DomAttrMap[A] extends boolean ? A : never }[keyof DomAttrMap];
 
 /** Single attribute */
 export interface DomAttr<A extends DomAttrName> {
     /** Attribute value */
-    v: DomAttrMap[A];
+    v: DomAttrType<A>;
     /** Transaction identifier */
     t: DomTxnId;
 }
 
-/** Attribute value */
+/** Attribute value type */
+export type DomAttrType<A extends DomAttrName> =
+    A extends keyof DomAttrMap ?
+    DomAttrMap[A] extends boolean ?
+    undefined : DomAttrMap[A] : DomAttrVal;
+
+/** Generic attribute value */
 export type DomAttrVal = string | number | undefined;
+
+/** Attribute assignment function */
+export interface DomAttrFn {
+    <A extends DomAttrNameBool>(name: A): void;
+    <A extends DomAttrName>(name: A, val: DomAttrType<A>): void;
+}
 
 /** Set of styles */
 export type DomStyles = Record<DomStyleName, DomStyle<DomStyleVal> | undefined>;
