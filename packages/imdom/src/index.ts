@@ -5,3 +5,4 @@ export * from './utils';
 export * from './domop';
 export * from './reuse';
 export * from './build';
+export * from './bench';

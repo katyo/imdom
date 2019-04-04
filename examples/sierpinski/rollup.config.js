@@ -65,9 +65,6 @@ export default {
             'process.env.npm_package_version': stringify(version),
             'process.env.NODE_ENV': stringify(debug ? 'development' : 'production'),
             'process.env.JS_TARGET': stringify('browser'),
-            'process.env.DOM_TRACE': stringify(false),
-            'process.env.DOM_BENCH': stringify(true),
-            'process.env.REUSE_BENCH': stringify(true),
         }),
         config.use_babel && babel({
             presets: [['@babel/preset-env', {modules: false}]],

@@ -15,14 +15,24 @@ export const BROWSER = process.env.JS_TARGET != 'server';
 /**
  * Enable tracing DOM operations
  */
-export const TRACE_DOM = process.env.DOM_TRACE;
+export const TRACE_DOMOP = false;
+
+/**
+ * Enable patch benchmarking
+ */
+export const BENCH_PATCH = false;
+
+/**
+ * Enable reuse benchmarking
+ */
+export const BENCH_REUSE = false;
 
 /**
  * Enable benchmarking DOM operations
  */
-export const BENCH_DOM = process.env.DOM_BENCH;
+export const BENCH_DOMOP = false;
 
 /**
- * Enable reconciler benchmarking
+ * Minimum time between printing stats
  */
-export const BENCH_REUSE = process.env.REUSE_BENCH;
+export const STATS_INTERVAL = 5000;

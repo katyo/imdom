@@ -2,10 +2,12 @@
  * @module patch
  */
 
-import { BROWSER } from './decls';
+import { BROWSER, BENCH_PATCH, BENCH_REUSE, BENCH_DOMOP, STATS_INTERVAL } from './decls';
+import { bench_init, bench_start, bench_stop, bench_stat, bench_show } from './bench';
 import { DomTxnId, DomClassSet, DomNameSpace, DomAttrFn, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey, DomAttrName, DomAttrType } from './types';
 import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
+import { domop_stats } from './domop';
 import * as dom from './domop';
 
 export interface State {
@@ -22,6 +24,10 @@ export interface State {
 let stack: State[] = [];
 let state: State;
 let txnid: DomTxnId = 0;
+
+const patch_stats = BENCH_PATCH ? bench_init() : NULL;
+const reuse1_stats = BENCH_REUSE ? bench_init() : NULL;
+const reuse2_stats = BENCH_REUSE ? bench_init() : NULL;
 
 function stack_push($: DomElement | DomFragment) {
     stack.push(state = {
@@ -83,6 +89,8 @@ const remove_node: (node: DomNode, parent: Node) => void =
     } : NOOP;
 
 function stack_pop() {
+    if (BENCH_REUSE) bench_start(reuse2_stats!);
+
     state.$._ = reconcile(
         state.r,
         replace_node,
@@ -91,6 +99,8 @@ function stack_pop() {
         remove_node,
         state.$.$
     ); // reconcile children
+
+    if (BENCH_REUSE) bench_stop(reuse2_stats!);
 
     stack.pop(); // pop state from stack
 
@@ -102,6 +112,8 @@ function stack_pop() {
                 attach(child);
             }
         }
+
+        if (BENCH_PATCH || BENCH_REUSE || (BROWSER && BENCH_DOMOP)) update_stats();
     }
 
     state = stack[stack.length - 1]; // update reference to current state
@@ -210,7 +222,11 @@ const update_text: <T extends DomText | DomComment>(node: T, str: string) => voi
     } : NOOP;
 
 function push_text<N extends DomNode, Ctx>(match: (node: DomNode, ctx: Ctx) => node is N, create: (ctx: Ctx) => N, update: (node: N, ctx: Ctx) => void, ctx: Ctx) {
+    if (BENCH_REUSE) bench_start(reuse1_stats!);
+
     let elm = reuse_node(state.r, match, ctx, false) as N | void; // try to reuse next node using match function
+
+    if (BENCH_REUSE) bench_stop(reuse1_stats!);
 
     if (elm) {
         update(elm, ctx);
@@ -504,6 +520,8 @@ export const ievent: <E extends keyof DomEventMap>(name: E, fn: DomEventFn<E>) =
    Call `end()` to stop patching.
 */
 export function patch(fragment: DomFragment) {
+    if (BENCH_PATCH) bench_start(patch_stats!);
+
     txnid ++;
     stack_push(fragment);
 }
@@ -521,3 +539,42 @@ export function patch(fragment: DomFragment) {
 /*export function stop(): DomFragment {
 
 }*/
+
+let stats_timer: any;
+
+function update_stats() {
+    if (BENCH_PATCH) {
+        bench_stop(patch_stats!);
+        bench_stat(patch_stats!);
+    }
+
+    if (BENCH_REUSE) {
+        bench_stat(reuse1_stats!);
+        bench_stat(reuse2_stats!);
+    }
+
+    if (BROWSER && BENCH_DOMOP) {
+        bench_stat(domop_stats!);
+    }
+
+    if (!stats_timer) {
+        stats_timer = setTimeout(print_stats, STATS_INTERVAL);
+    }
+}
+
+function print_stats() {
+    stats_timer = NULL;
+
+    if (BENCH_PATCH) {
+        console.log('patch', bench_show(patch_stats!));
+    }
+
+    if (BENCH_REUSE) {
+        console.log('reuse1', bench_show(reuse1_stats!));
+        console.log('reuse2', bench_show(reuse2_stats!));
+    }
+
+    if (BROWSER && BENCH_DOMOP) {
+        console.log('domop', bench_show(domop_stats!));
+    }
+}
