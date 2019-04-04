@@ -109,7 +109,9 @@ export function parse_classes(cls?: string | null): DomClassSet | undefined {
     if (cls) {
         const classes = {} as DomClassSet;
         const lst = cls.replace(/^[\.\s]/, '').split(/[\.\s]/);
-        for (const name of lst) classes[name] = true;
+        for (let i = 0; i < lst.length; ) {
+            classes[lst[i++]] = true;
+        }
         return classes;
     }
 }
@@ -117,13 +119,19 @@ export function parse_classes(cls?: string | null): DomClassSet | undefined {
 /** Build classes from set */
 export function build_classes(cls: DomClassSet, sep: string = ' ') {
     let str = '';
-    for (const name in cls) str += sep + name;
+    for (const name in cls) {
+        str += sep + name;
+    }
     return str;
 }
 
 /** Check when required classes exists in all classes */
 function has_classes(req: string[], all: DomClassSet): boolean {
-    for (const name of req) if (!all[name]) return false;
+    for (let i = 0; i < req.length; ) {
+        if (!all[req[i++]]) {
+            return false;
+        }
+    }
     return true;
 }
 

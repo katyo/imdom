@@ -45,8 +45,9 @@ function detach(node: DomNode) {
     if (is_element(node) // when virtual node is element
         && is_attached(node)) { // and virtual element is attached
         //trace('detach', node.$);
-        /*for (const child of node._) {
-            detach(child);
+        /*const children = node._;
+        for (let i = 0; i < children.length; ) {
+            detach(children[i++]);
         }*/
         node.f &= ~DomFlags.Attached; // mark element as detached
     }
@@ -57,8 +58,9 @@ function attach(node: DomNode) {
         && !is_attached(node)) { // and virtual element is detached
         //trace('attach', node.$);
         node.f |= DomFlags.Attached; // mark element as attached
-        for (const child of node._) {
-            attach(child);
+        const children = node._;
+        for (let i = 0; i < children.length; ) {
+            attach(children[i++]);
         }
     }
 }
@@ -108,8 +110,9 @@ function stack_pop() {
         if (is_element(state.$ as DomNode)) {
             attach(state.$ as DomNode);
         } else {
-            for (const child of (state.$ as DomFragment)._) {
-                attach(child);
+            const children = (state.$ as DomFragment)._;
+            for (let i = 0; i < children.length; ) {
+                attach(children[i++]);
             }
         }
 
@@ -161,7 +164,9 @@ const create_element: (sel: Selector) => DomElement =
 
         if (sel.c) { // when classes is present
             class_set = {}; // initialize selector classes
-            for (const name of sel.c) { // for classes
+            const class_list = sel.c;
+            for (let i = 0; i < class_list.length; ) { // for classes
+                const name = class_list[i++];
                 class_set[name] = true; // set class in selector
                 dom.add_class(node, name); // add class name
             }
@@ -191,8 +196,9 @@ const create_element: (sel: Selector) => DomElement =
 
         if (sel.c) { // when classes is present
             class_set = {}; // initialize selector classes
-            for (const name of sel.c) { // for classes
-                class_set[name] = true; // set class in selector
+            const class_list = sel.c;
+            for (let i = 0; i < class_list.length; ) { // for classes
+                class_set[class_list[i++]] = true; // set class in selector
             }
         }
 
@@ -240,8 +246,11 @@ export function key(k?: DomKey | undefined) {
     state.k = k;
 }
 
+const slice = Array.prototype.slice;
+
 /** Open new child element */
-export function tag(name: string, id?: string, class1?: string, class2?: string, class3?: string, ...classes: string[]) {
+export function tag(name: string, id?: string, class1?: string, class2?: string, class3?: string, ...classes: string[]): void;
+export function tag(name: string, id?: string, class1?: string, class2?: string, class3?: string) {
     const sel: Selector = { // create selector of opened element
         t: name, // set tag name
         n: name == 'svg' ? // when tag is 'svg'
@@ -254,13 +263,17 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
         c: !class1 ? NULL : // set element classes
             !class2 ? [class1] : // one class is present
             !class3 ? [class1, class2] : // two classes is present
-            !classes.length ? [class1, class2, class3] : // three classes is present
-            [class1, class2, class3, ...classes], // several classes is present
+            arguments.length < 6 ? [class1, class2, class3] : // three classes is present
+            slice.call(arguments, 2), // several classes is present
         k: state.k, // set element key
     };
 
+    if (BENCH_REUSE) bench_start(reuse1_stats!);
+
     // try to reuse existing child element using selector
     let elm = reuse_node(state.r, match_element, sel, true) as DomElement | void;
+
+    if (BENCH_REUSE) bench_stop(reuse1_stats!);
 
     if (!elm) { // when virtual element missing
         push_node(state.r, elm = create_element(sel)); // create new virtual node
@@ -268,8 +281,9 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
         const cls = elm.x.c; // get classes from element selector
 
         if (cls) { // when element has classes in selector
-            for (const name of sel.c) { // iterate over classes in current selector
-                cls[name] = false; // remove class from element selector
+            const class_list = sel.c;
+            for (let i = 0; i < class_list.length; ) { // iterate over classes in current selector
+                cls[class_list[i++]] = false; // remove class from element selector
             }
 
             // move all classes which missing in selector to mutable class set

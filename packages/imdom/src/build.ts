@@ -3,7 +3,7 @@
  *  HTML rendering functions
  */
 
-import { DomNode, DomFlags, DomFragment, DomElement, DomDocType, DomText, DomClassSet, DomClasses, DomAttrs, DomStyles } from './types';
+import { DomNode, DomFlags, DomFragment, DomElement, DomDocType, DomClassSet, DomClasses, DomAttrs, DomStyles } from './types';
 import { NULL, is_defined, is_element, is_doctype, is_text } from './utils';
 
 /** Prepare empty DOM fragment for rendering to */
@@ -21,8 +21,8 @@ export function format(elm: DomFragment | DomElement): string {
 }
 
 function format_children(out: string, children: DomNode[]): string {
-    for (const child of children) {
-        out = format_node(out, child);
+    for (let i = 0; i < children.length; ) {
+        out = format_node(out, children[i++]);
     }
     return out;
 }
@@ -85,14 +85,16 @@ function format_element(out: string, elm: DomElement): string {
 
     if (elm._.length) {
         out += '>';
+        const children = elm._;
         if (code_tag.test(tag)) {
-            for (const node of elm._) {
-                if (is_text(node as unknown as DomNode)) {
-                    out += escape_code((node as DomText).t);
+            for (let i = 0; i < children.length; ) {
+                const node = children[i++];
+                if (is_text(node)) {
+                    out += escape_code(node.t);
                 }
             }
         } else {
-            out = format_children(out, elm._);
+            out = format_children(out, children);
         }
         out += `</${tag}>`;
     } else {
