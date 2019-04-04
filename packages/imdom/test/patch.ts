@@ -332,24 +332,39 @@ describe('patch', () => {
                 se((elm.firstChild as Element).getAttribute('href'), 'http://localhost/');
             });
 
-            /*
-            it('can create an element created inside an iframe', done => {
-                // Only run if srcdoc is supported.
-                var frame = create_element('iframe');
-                if (typeof frame.srcdoc !== 'undefined') {
-                    frame.srcdoc = "<div>Thing 1</div>";
-                    frame.onload = () => {
-                        patch(read(frame.contentDocument.body.querySelector('div')), h('div', 'Thing 2'));
-                        assert.equal(frame.contentDocument.body.querySelector('div').textContent, 'Thing 2');
-                        frame.remove();
+            if (typeof global == 'undefined') { // Because JSDOM has buggy support of 'srcdoc'
+                it('can create an element created inside an iframe', done => {
+                    // Only run if srcdoc is supported.
+                    const frame = create_element('iframe') as HTMLIFrameElement;
+                    if (typeof frame.srcdoc !== 'undefined') {
+                        //frame.srcdoc = "<html><head></head><body><div>Thing 1</div></body></html>";
+                        frame.srcdoc = "<div>Thing 1</div>";
+                        frame.onload = () => {
+                            //console.log(frame.contentDocument!.body.childNodes);
+                            ok(!!frame.contentDocument!.body.firstChild);
+                            se(frame.contentDocument!.body.firstChild!.nodeType, 1);
+                            se((frame.contentDocument!.body.firstChild as Element).tagName, 'DIV');
+                            se(frame.contentDocument!.body.firstChild!.textContent, "Thing 1");
+
+                            vdom = parse(frame.contentDocument!.body.firstChild as Element);
+
+                            patch(vdom); {
+                                tag('div'); {
+                                    text('Thing 2');
+                                } end();
+                            } end();
+
+                            se(frame.contentDocument!.body.firstChild!.textContent, 'Thing 2');
+
+                            frame.remove();
+                            done();
+                        };
+                        document.body.appendChild(frame);
+                    } else {
                         done();
-                    };
-                    document.body.appendChild(frame);
-                } else {
-                    done();
-                }
-            });
-            */
+                    }
+                });
+            }
 
             it('is a patch of the root element', () => {
                 patch(vdom);
