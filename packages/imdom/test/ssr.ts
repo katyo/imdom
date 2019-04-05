@@ -1,14 +1,18 @@
 process.env.JS_TARGET = "server";
 
 import { strictEqual as se } from 'assert';
-import { NULL as _, prepare, format, doctype, patch, tag, end, once, iattr, attr, class_, istyle, style, text } from '../src/index';
+import { DomFragment, _, prepare, format, doctype, patch, tag, end, once, iattr, attr, class_, istyle, style, text } from '../src/index';
 
 describe('ssr', () => {
-    it('attrs', () => {
-        const root = prepare();
+    let vdom: DomFragment;
 
+    beforeEach(() => {
+        vdom = prepare();
+    });
+
+    it('attrs', () => {
         function draw(keywords: string[]) {
-            patch(root); {
+            patch(vdom); {
                 tag('meta'); {
                     if (once()) {
                         iattr('name', 'keywords');
@@ -22,14 +26,12 @@ describe('ssr', () => {
         draw([]);
         draw(['some', 'other', '"some other"']);
 
-        se(format(root), '<meta name="keywords" content="some, other, &quot;some other&quot;">');
+        se(format(vdom), '<meta name="keywords" content="some, other, &quot;some other&quot;">');
     });
 
     it('classes', () => {
-        const root = prepare();
-
         function draw(view: boolean) {
-            patch(root); {
+            patch(vdom); {
                 tag('div', _, 'main'); {
                     if (view) {
                         class_('view');
@@ -42,14 +44,12 @@ describe('ssr', () => {
         draw(false);
         draw(true);
 
-        se(format(root), '<div class="main view"></div>');
+        se(format(vdom), '<div class="main view"></div>');
     });
 
     it('styles', () => {
-        const root = prepare();
-
         function draw(borderWidth: string, backgroundColor: string) {
-            patch(root); {
+            patch(vdom); {
                 tag('span'); {
                     if (once()) {
                         istyle('overflow', 'hidden');
@@ -64,14 +64,12 @@ describe('ssr', () => {
         draw('1px', 'red');
         draw('0px', '#123');
 
-        se(format(root), '<span style="overflow:hidden;border-width:1px;display:block;background-color:#123"></span>');
+        se(format(vdom), '<span style="overflow:hidden;border-width:1px;display:block;background-color:#123"></span>');
     });
 
     describe('code tags', () => {
         it('script src', () => {
-            const root = prepare();
-
-            patch(root); {
+            patch(vdom); {
                 tag('script'); {
                     if (once()) {
                         iattr('src', 'https://example.com/script.js');
@@ -79,38 +77,32 @@ describe('ssr', () => {
                 } end();
             } end();
 
-            se(format(root), '<script src="https://example.com/script.js"></script>');
+            se(format(vdom), '<script src="https://example.com/script.js"></script>');
         });
 
         it('script text', () => {
-            const root = prepare();
-
-            patch(root); {
+            patch(vdom); {
                 tag('script'); {
                     text('const path="/";');
                 } end();
             } end();
 
-            se(format(root), '<script>const path="\\u002F";</script>');
+            se(format(vdom), '<script>const path="\\u002F";</script>');
         });
 
         it('style text', () => {
-            const root = prepare();
-
-            patch(root); {
+            patch(vdom); {
                 tag('style'); {
                     text('a { color: blue; }');
                 } end();
             } end();
 
-            se(format(root), '<style>a { color: blue; }</style>');
+            se(format(vdom), '<style>a { color: blue; }</style>');
         });
     });
 
     it('document', () => {
-        const root = prepare();
-
-        patch(root); {
+        patch(vdom); {
             doctype('html');
             tag('html'); {
                 tag('head'); {
@@ -131,6 +123,6 @@ describe('ssr', () => {
             } end();
         } end();
 
-        se(format(root), '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Page title</title></head><body><p>Paragraph</p></body></html>');
+        se(format(vdom), '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Page title</title></head><body><p>Paragraph</p></body></html>');
     });
 });
