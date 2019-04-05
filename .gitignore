@@ -1,7 +1,6 @@
-bin/
 dist/
 node_modules/
-es/
+doc/
 .lws/
 *.js
 !jsx/{src,test}/**/*.js
@@ -9,7 +8,7 @@ es/
 *.js.map
 *.d.ts
 *.tgz
-.rpt2*/
+.rpt2_cache/
 cache/
 deprecated/
 package-lock.json
