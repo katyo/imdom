@@ -20,11 +20,11 @@ export const astRender: ASTRenderer = {
 
 export type ASTHighlighter = Highlighter<AST>;
 
-export function init_ast(options?: Options): ASTHighlighter {
+export function initHighlight(options?: Options): ASTHighlighter {
     return init(astRender, options);
 }
 
-export function view_ast(highlighter: ASTHighlighter, src: string, lang?: string | string[]): string {
+export function viewHighlight(highlighter: ASTHighlighter, src: string, lang?: string | string[]): string {
     if (lang) {
         const langs = listLanguages();
         // remove unsupported languages to prevent fault

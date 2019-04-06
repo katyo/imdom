@@ -1,9 +1,7 @@
 import { strictEqual as se } from 'assert';
 import { DomFragment, _, parse, patch, end, create_element } from 'imdom';
-import { init_ast, view_ast } from '../src';
-import './setup';
-
-const highlighter = init_ast();
+import { viewHighlight as view } from '../src';
+import { highlighter } from './setup';
 
 describe('highlight DOM', () => {
     let vdom: DomFragment;
@@ -14,7 +12,7 @@ describe('highlight DOM', () => {
 
     it('TypeScript', () => {
         patch(vdom); {
-            view_ast(highlighter, `import { _, tag, end, patch } from "imdom";
+            view(highlighter, `import { _, tag, end, patch } from "imdom";
 `);
         } end();
 
@@ -24,7 +22,7 @@ describe('highlight DOM', () => {
 
     it('Rust', () => {
         patch(vdom); {
-            view_ast(highlighter, `
+            view(highlighter, `
 trait Foo {
     fn foo(&self, Box<Foo>);
 }
@@ -40,7 +38,7 @@ trait Foo {
 
     it('Markdown', () => {
         patch(vdom); {
-            view_ast(highlighter, `
+            view(highlighter, `
 # Title
 
 ## Subtitle

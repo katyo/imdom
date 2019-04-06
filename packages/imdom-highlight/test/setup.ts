@@ -1,6 +1,7 @@
 import {
     // import basic APIs
     registerLanguages,
+    initHighlight as init,
 
     // import preferred languages
     Rust,
@@ -14,3 +15,5 @@ registerLanguages(
     TypeScript,
     Markdown
 );
+
+export const highlighter = init();

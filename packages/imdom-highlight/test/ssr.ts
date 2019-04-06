@@ -2,10 +2,8 @@ process.env.JS_TARGET = "server";
 
 import { strictEqual as se } from 'assert';
 import { DomFragment, _, prepare, format, patch, end } from 'imdom';
-import { init_ast, view_ast } from '../src';
-import './setup';
-
-const highlighter = init_ast();
+import { viewHighlight as view } from '../src';
+import { highlighter } from './setup';
 
 describe('highlight SSR', () => {
     let vdom: DomFragment;
@@ -16,7 +14,7 @@ describe('highlight SSR', () => {
 
     it('TypeScript', () => {
         patch(vdom); {
-            view_ast(highlighter, `import { _, tag, end, patch } from "imdom";
+            view(highlighter, `import { _, tag, end, patch } from "imdom";
 `);
         } end();
 
@@ -26,7 +24,7 @@ describe('highlight SSR', () => {
 
     it('Rust', () => {
         patch(vdom); {
-            view_ast(highlighter, `
+            view(highlighter, `
 trait Foo {
     fn foo(&self, Box<Foo>);
 }
@@ -42,7 +40,7 @@ trait Foo {
 
     it('Markdown', () => {
         patch(vdom); {
-            view_ast(highlighter, `
+            view(highlighter, `
 # Title
 
 ## Subtitle
