@@ -10,7 +10,7 @@ import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse
 import { domop_stats } from './domop';
 import * as dom from './domop';
 
-export interface State {
+interface State {
     // element
     $: DomElement | DomFragment,
     // reconciler
@@ -21,9 +21,31 @@ export interface State {
     //f:
 }
 
+// patching stack
 let stack: State[] = [];
+
+// current state
 let state: State;
+
+// last transaction id
 let txnid: DomTxnId = 0;
+
+export interface TaskFn<Args extends any[]> {
+    (...args: Args): void;
+}
+
+export interface Task<Args extends any[] = any[]> {
+    f: TaskFn<Args>;
+    a: Args;
+}
+
+// tasks to run after patching
+const tasks: Task[] = [];
+
+/** Schedule function to run after patch */
+export function after<Args extends any[]>(fn: TaskFn<Args>, ...args: Args) {
+    tasks.push({ f: fn, a: args } as Task<Args> as unknown as Task);
+}
 
 const patch_stats = BENCH_PATCH ? bench_init() : NULL;
 const reuse1_stats = BENCH_REUSE ? bench_init() : NULL;
@@ -107,6 +129,7 @@ function stack_pop() {
     stack.pop(); // pop state from stack
 
     if (!stack.length) {
+        // attach detached elements
         if (is_element(state.$ as DomNode)) {
             attach(state.$ as DomNode);
         } else {
@@ -114,6 +137,11 @@ function stack_pop() {
             for (let i = 0; i < children.length; ) {
                 attach(children[i++]);
             }
+        }
+
+        // run scheduled tasks
+        for (let task; task = tasks.shift(); ) {
+            task.f(...task.a);
         }
 
         if (BENCH_PATCH || BENCH_REUSE || (BROWSER && BENCH_DOMOP)) update_stats();
