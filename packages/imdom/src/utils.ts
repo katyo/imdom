@@ -15,6 +15,19 @@ export const EMPTY_STRING = '';
 /** Dummy function */
 export const NOOP = () => {};
 
+/** Trace function */
+export function trace(...args: any[]) {
+    console.log(...args);
+}
+
+/** Assert function */
+export function assert(val: any, msg: string, ...args: any[]) {
+    if (!val) {
+        console.error(msg, ...args);
+        throw new Error(msg);
+    }
+}
+
 /** Check when some value is defined */
 export function is_defined<T>(v: T | undefined | null | void): v is T {
     return v != NULL;
