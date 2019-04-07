@@ -3,6 +3,7 @@
  */
 
 import { DomFlags, DomKey, DomNode, DomText, DomComment, DomDocType, DomDocTypeSpec, DomElement, DomSelector, DomClassSet, DomNameSpace, DomAttrName, DomAttrType } from './types';
+import { DEBUG } from './decls';
 
 /** Undefined value */
 export const NULL = void 0;
@@ -422,3 +423,158 @@ export function cancel_event(event: Event) {
     prevent_event(event);
 }
 
+/** Text selection region or cursor position */
+export interface Selection {
+    /** Start of region or cursor position */
+    s: number;
+    /** End of region or cursor position */
+    e: number;
+}
+
+/** Get length of selection region */
+export function selection_len(sel: Selection) {
+    return Math.abs(sel.s - sel.e);
+}
+
+const { min, max } = Math;
+
+/** Cut text from content using selection */
+export function selection_cut(content: string, sel: Selection): string {
+    return content.substr(0, min(sel.s, sel.e)) + content.substr(max(sel.s, sel.e));
+}
+
+/** Copy text from content using selection */
+export function selection_copy(content: string, sel: Selection): string {
+    const offset = min(sel.s, sel.e);
+    return content.substr(offset, max(sel.s, sel.e) - offset);
+}
+
+/** Paste text into content using selection */
+export function selection_paste(content: string, sel: Selection, text: string): string {
+    return content.substr(0, min(sel.s, sel.e)) + text + content.substr(max(sel.s, sel.e));
+}
+
+/** Get selection region or cursor position */
+export function selection_of(node: DomNode): Selection {
+    const doc = document_of(node.$);
+    if (DEBUG) assert(doc, 'Cannot get document of node', node);
+
+    const sel = doc.getSelection()!;
+    if (DEBUG) assert(sel, 'Cannot get selection from document', doc);
+
+    const start = find_point(node, sel.anchorNode, sel.anchorOffset);
+
+    return sel.isCollapsed ? { s: start, e: start } :
+        { s: start, e: find_point(node, sel.focusNode, sel.focusOffset) };
+}
+
+/** Get character position in DOM */
+export function find_point(root: DomNode, node: Node, offset: number): number {
+    const state: { p: number } = { p: 0 };
+
+    find_point_recurse(state, root, node, offset);
+
+    return state.p;
+}
+
+function find_point_recurse(state: { p: number }, cur: DomNode, node: Node, offset: number): boolean {
+    if (is_text(cur)) {
+        if (cur.$ == node) {
+            state.p += min(offset, cur.t.length - 1);
+            return true;
+        } else {
+            state.p += cur.t.length;
+            return false;
+        }
+    } else if (is_element(cur)) {
+        if (cur.$ == node) {
+            return true;
+        }
+
+        if (cur._.length) {
+            const count = cur.$ == node ? offset : cur._.length;
+            for (let i = 0; i < count; i++) {
+                if (find_point_recurse(state, cur._[i], node, offset)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/** Set selection range or cursor position */
+export function selection_to(root: DomElement, sel: Selection): void {
+    const doc = document_of(root.$);
+    if (!doc) return;
+
+    const csel = doc.getSelection();
+    if (!csel) return;
+
+    const start = pick_point(root, sel.s);
+
+    if (selection_len(sel)) {
+        const end = pick_point(root, sel.e);
+        csel.setBaseAndExtent(start[0], start[1], end[0], end[1]);
+    } else {
+        csel.setPosition(start[0], start[1]);
+    }
+
+    /*
+    let range = csel.rangeCount && csel.getRangeAt(0);
+
+    if (!range) {
+        range = doc.createRange();
+        csel.addRange(range);
+    }
+
+    const start = pick_point(root, sel.s);
+    const end = sel.s == sel.e ? start : pick_point(root, sel.e);
+
+    if (range.startContainer !== start[0] || range.startOffset !== start[1]) {
+        range.setStart(start[0], start[1]);
+    }
+
+    if (range.endContainer !== end[0] || range.endOffset !== end[1]) {
+        range.setEnd(end[0], end[1]);
+    }
+    */
+}
+
+/** Pick character position in DOM */
+export function pick_point(root: DomNode, pos: number): [Node, number] {
+    const state: [Node, number] = [
+        root.$,
+        pos,
+    ];
+
+    if (!pick_point_recurse(state, root)) {
+        if (!state[1]) {
+            state[1] = is_element(root) ? root._.length : is_text(root) ? root.t.length : 0;
+        }
+    }
+
+    return state;
+}
+
+function pick_point_recurse(state: [Node, number], cur: DomNode): boolean {
+    if (is_text(cur)) {
+        if (state[1] < cur.t.length) {
+            state[0] = cur.$;
+            return true;
+        } else {
+            state[1] -= cur.t.length;
+            return false;
+        }
+    } else if (is_element(cur)) {
+        if (cur._.length) {
+            const count = cur._.length;
+            for (let i = 0; i < count; i++) {
+                if (pick_point_recurse(state, cur._[i])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
