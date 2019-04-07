@@ -21,6 +21,9 @@ export function trace(...args: any[]) {
     console.log(...args);
 }
 
+/** Print function */
+export { trace as print };
+
 /** Assert function */
 export function assert(val: any, msg: string, ...args: any[]) {
     if (!val) {

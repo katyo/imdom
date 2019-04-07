@@ -5,7 +5,7 @@
 import { BROWSER, BENCH_PATCH, BENCH_REUSE, BENCH_DOMOP, STATS_INTERVAL } from './decls';
 import { bench_init, bench_start, bench_stop, bench_stat, bench_show } from './bench';
 import { DomTxnId, DomClassSet, DomNameSpace, DomAttrFn, DomStyleMap, DomEventMap, DomEventFn, DomElement, DomText, DomComment, DomDocType, DomDocTypeSpec, DomNode, DomFlags, DomFragment, DomKey, DomAttrName, DomAttrType } from './types';
-import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map } from './utils';
+import { Selector, is_defined, match_element, is_element, is_text, is_comment, match_doctype, NULL, NOOP, ns_uri_map, print } from './utils';
 import { Reconciler, use_nodes, reuse_node, push_node, reconcile } from './reuse';
 import { domop_stats } from './domop';
 import * as dom from './domop';
@@ -613,15 +613,15 @@ function print_stats() {
     stats_timer = NULL;
 
     if (BENCH_PATCH) {
-        console.log('patch', bench_show(patch_stats!));
+        print('patch', bench_show(patch_stats!));
     }
 
     if (BENCH_REUSE) {
-        console.log('reuse1', bench_show(reuse1_stats!));
-        console.log('reuse2', bench_show(reuse2_stats!));
+        print('reuse1', bench_show(reuse1_stats!));
+        print('reuse2', bench_show(reuse2_stats!));
     }
 
     if (BROWSER && BENCH_DOMOP) {
-        console.log('domop', bench_show(domop_stats!));
+        print('domop', bench_show(domop_stats!));
     }
 }
