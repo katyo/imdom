@@ -205,8 +205,10 @@ export function remove_attr<A extends DomAttrName>(elm: Element, name: A, val: D
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 }
 
+export type EventNode = Element | Document | Window;
+
 /** Add event listener to DOM element */
-export function add_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
+export function add_event<E extends keyof DomEventMap>(elm: EventNode, name: E, fn: DomEventFn<E>) {
     if (TRACE_DOMOP) trace('add event', name, 'to', elm);
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
@@ -217,7 +219,7 @@ export function add_event<E extends keyof DomEventMap>(elm: Element, name: E, fn
 }
 
 /** Remove event listener from DOM element */
-export function remove_event<E extends keyof DomEventMap>(elm: Element, name: E, fn: DomEventFn<E>) {
+export function remove_event<E extends keyof DomEventMap>(elm: EventNode, name: E, fn: DomEventFn<E>) {
     if (TRACE_DOMOP) trace('remove event', name, 'from', elm);
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
@@ -225,4 +227,12 @@ export function remove_event<E extends keyof DomEventMap>(elm: Element, name: E,
     elm.removeEventListener(name as string, fn as EventListener, false);
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
+}
+
+/** Add event listener which fires once */
+export function once_event<E extends keyof DomEventMap>(elm: EventNode, name: E, fn: DomEventFn<E>) {
+    add_event(elm, name, function handle(event) {
+        remove_event(elm, name, handle);
+        return fn(event);
+    });
 }
