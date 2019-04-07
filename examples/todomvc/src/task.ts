@@ -1,4 +1,4 @@
-import { _, tag, end, text, once, elem, iattr, ievent, attr, class_ } from 'imdom';
+import { _, tag, end, text, once, iattr, ievent, attr, class_, element } from 'imdom';
 import { Store, get, set, over, toggle, change } from './store';
 import { KeyCode } from './keys';
 
@@ -68,27 +68,27 @@ export function view(store: Store<State>) {
             } end();
         } end();
         tag('input', _, 'edit'); {
+            const elm = element<HTMLInputElement>();
             if (once()) {
-                ievent('blur', e => {
+                ievent('blur', () => {
                     over(store, change({
-                        content: (e.target as HTMLInputElement).value,
+                        content: elm.value,
                         editing: false
                     }));
                 });
                 ievent('keydown', e => {
                     if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
                         over(store, change({
-                            content: (e.target as HTMLInputElement).value,
+                            content: elm.value,
                             editing: false
                         }));
                     }
                 });
             }
             attr('value', content);
-            const entry = elem<HTMLInputElement>();
-            if (editing) {
-                entry.focus();
-                entry.selectionStart = entry.selectionEnd = entry.value.length;
+            if (elm && editing) {
+                elm.focus();
+                elm.selectionStart = elm.selectionEnd = elm.value.length;
             }
         } end();
     } end();

@@ -1,4 +1,4 @@
-import { _, key, tag, end, text, once, iattr, attr, ievent } from 'imdom';
+import { _, key, tag, end, text, once, iattr, attr, ievent, element } from 'imdom';
 import { Store, get, set, over, lens, adjust, remove } from './store';
 import { render } from './core';
 import { KeyCode } from './keys';
@@ -27,7 +27,6 @@ export interface On {
 function add_task(store: Store<State>, data?: Partial<Task.Data>) {
     over(store, adjust('last_task', 1));
     const $ = get(store).last_task;
-    console.log('add task', $);
     Task.init(lens(store, 'tasks', $), {
         remove() { over(lens(store, 'tasks'), remove($)); }
     }, data);
@@ -103,14 +102,14 @@ export function view(store: Store<State>) {
             } end();
             tag('input', _, 'new-todo'); {
                 if (once()) {
+                    const elm = element<HTMLInputElement>();
                     iattr('placeholder', 'What needs to be done?');
                     iattr('autofocus');
                     ievent('keydown', e => {
-                        const input = e.target as HTMLInputElement;
-                        if (input.value != '' && e.keyCode == KeyCode.Enter) {
-                            add_task(store, { content: input.value });
+                        if (elm.value != '' && e.keyCode == KeyCode.Enter) {
+                            add_task(store, { content: elm.value });
                             on.change();
-                            input.value = '';
+                            elm.value = '';
                         }
                     });
                 }

@@ -385,8 +385,13 @@ export function doctype(qualifiedName: string, publicId: string = '', systemId: 
     push_text(match_doctype, create_doctype, NOOP, {n: qualifiedName, p: publicId, s: systemId}); // push document type node
 }
 
-/** Get current opened DOM element */
-export function elem<T extends Element = Element>(): T {
+/** Get current opened virtual DOM element */
+export function current(): DomElement {
+    return state.$ as DomElement;
+}
+
+/** Get current opened real DOM element */
+export function element<T extends Element = Element>(): T {
     return state.$.$ as T;
 }
 
