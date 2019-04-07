@@ -78,7 +78,7 @@ function format_element(out: string, elm: DomElement): string {
     }
     out = format_classes(out, sel.c, elm.c);
     if (sel.k) {
-        out += ` data-key="${escape_attr(sel.k)}"`;
+        out += ` data-key="${format_attr(sel.k)}"`;
     }
     out = format_attrs(out, elm.a);
     out = format_styles(out, elm.s);
@@ -139,13 +139,17 @@ function format_attrs(out: string, attrs: DomAttrs): string {
         const attr = attrs[name];
         if (attr) {
             if (is_defined(attr.v)) {
-                out += ` ${name}="${escape_attr(attr.v)}"`;
+                out += ` ${name}="${format_attr(attr.v)}"`;
             } else {
                 out += ` ${name}`;
             }
         }
     }
     return out;
+}
+
+function format_attr(val: string | number | boolean): string {
+    return typeof val == 'string' ? escape_attr(val) : val.toString();
 }
 
 function format_styles(out: string, styles: DomStyles): string {
@@ -221,39 +225,36 @@ export function escape_text(text: string | number): string {
  * @param text - Attribute value
  * @returns Escaped attribute value
  */
-function escape_attr(text: string | number): string {
-    if (typeof text == "string") {
-        if (text.indexOf("\"") == -1 && text.indexOf("&") == -1) {
-            return text;
-        }
-
-        let result = text;
-        let start = 0;
-        let i = 0;
-        for (; i < text.length; ++i) {
-            let escape: string;
-            switch (text.charCodeAt(i)) {
-                case 34: // "
-                    escape = "&quot;";
-                    break;
-                case 38: // &
-                    escape = "&amp;";
-                    break;
-                default:
-                    continue;
-            }
-            if (i > start) {
-                escape = text.slice(start, i) + escape;
-            }
-            result = (start > 0) ? result + escape : escape;
-            start = i + 1;
-        }
-        if (i !== start) {
-            return result + text.slice(start, i);
-        }
-        return result;
+function escape_attr(text: string): string {
+    if (text.indexOf("\"") == -1 && text.indexOf("&") == -1) {
+        return text;
     }
-    return text.toString();
+
+    let result = text;
+    let start = 0;
+    let i = 0;
+    for (; i < text.length; ++i) {
+        let escape: string;
+        switch (text.charCodeAt(i)) {
+            case 34: // "
+                escape = "&quot;";
+                break;
+            case 38: // &
+                escape = "&amp;";
+                break;
+            default:
+                continue;
+        }
+        if (i > start) {
+            escape = text.slice(start, i) + escape;
+        }
+        result = (start > 0) ? result + escape : escape;
+        start = i + 1;
+    }
+    if (i !== start) {
+        return result + text.slice(start, i);
+    }
+    return result;
 }
 
 /**

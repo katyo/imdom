@@ -291,12 +291,10 @@ export interface DomAttr<A extends DomAttrName> {
 
 /** Attribute value type */
 export type DomAttrType<A extends DomAttrName> =
-    A extends keyof DomAttrMap ?
-    DomAttrMap[A] extends boolean ?
-    undefined : DomAttrMap[A] : DomAttrVal;
+    A extends keyof DomAttrMap ? DomAttrMap[A] : DomAttrVal;
 
 /** Generic attribute value */
-export type DomAttrVal = string | number | undefined;
+export type DomAttrVal = string | number | boolean | undefined;
 
 /** Attribute assignment function */
 export interface DomAttrFn {
