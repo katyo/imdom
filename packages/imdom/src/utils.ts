@@ -215,3 +215,14 @@ export function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
         }
     }
 }
+
+/** Get real DOM element from virtual */
+export function element_of<T extends Element = Element>(elm: DomElement): T {
+    return elm.$ as T;
+}
+
+/** Get owner document of DOM node */
+export function document_of(node: Node): Document {
+    return node.ownerDocument!;
+}
+
