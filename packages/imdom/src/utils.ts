@@ -402,3 +402,23 @@ export function mod_keys(event: KeyboardEvent, mask: ModKey): boolean {
         false;
 }
 
+/** Stop event propagation */
+export function stop_event(event: Event) {
+    //if (event.stopPropagation) event.stopPropagation();
+    //else event.cancelBubble = true;
+    event.stopPropagation();
+}
+
+/** Prevent default event behavior */
+export function prevent_event(event: Event) {
+    //if (event.preventDefault) event.preventDefault();
+    //else event.returnValue = false;
+    event.preventDefault();
+}
+
+/** Stop event propagation and prevent default behavior */
+export function cancel_event(event: Event) {
+    stop_event(event);
+    prevent_event(event);
+}
+
