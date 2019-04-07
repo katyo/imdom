@@ -1,10 +1,11 @@
 {
-  "name": "imdom-sierpinski-example",
+  "name": "@imdom/example-sierpinski",
   "version": "0.1.0",
   "description": "Sierpinski triangles rendering using ImDOM",
   "scripts": {
-    "build": "mkdir -p dist && ts-node src/html && rollup -c",
-    "build_": "rollup -c",
+    "build": "npm run build:static && npm run build:client",
+    "build:static": "mkdir -p dist && ts-node src/static",
+    "build:client": "rollup -c",
     "watch": "rollup -c -w",
     "clean": "rm -rf dist",
     "prepare": "npm run build",
@@ -15,7 +16,6 @@
   "dependencies": {
     "@types/node": "^8",
     "imdom": "../../packages/imdom",
-    "raf": "^3",
     "raf-polyfill": "^1",
     "todomvc-app-css": "^2",
     "todomvc-common": "^1",

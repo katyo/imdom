@@ -1,4 +1,4 @@
-# Sierpinski triangles using Immediate-mode DOM
+# Sierpinski triangles using ImDOM
 
 ## Running
 
@@ -13,4 +13,4 @@ Open `dist/client.html` in your familiar browser.
 ## Entry points
 
 * src/client.ts - client app entry point
-* src/html.ts - initial html page renderer
+* src/static.ts - initial html page render

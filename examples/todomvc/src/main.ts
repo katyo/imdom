@@ -1,7 +1,7 @@
 import { Store, set, lens } from './store';
 import { _, tag, end, iattr, text, once, class_ } from 'imdom';
 import { render } from './core';
-import { PropsLite, page_lite } from './page';
+import { PropsLite, page_lite_open, page_lite_close } from './page';
 import * as Todo from './todo';
 
 const page_props: Partial<PropsLite> = {
@@ -22,14 +22,12 @@ export function init(store: Store<State>) {
 }
 
 export function view(store: Store<State>) {
-    page_lite(page_props, body, store);
-}
-
-function body(store: Store<State>) {
-    class_('learn-bar');
-    learn();
-    render(Todo.view, lens(store, 'todo'));
-    footer();
+    page_lite_open(page_props); {
+        class_('learn-bar');
+        learn();
+        render(Todo.view, lens(store, 'todo'));
+        footer();
+    } page_lite_close(page_props);
 }
 
 interface SourceLink {

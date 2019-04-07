@@ -28,8 +28,7 @@ export interface Props {
     baseTarget: string;
 };
 
-export function page<Args extends any[]>({
-    scripts = empty_array,
+export function page_open({
     styles = empty_array,
     charset = 'UTF-8',
     compat = 'IE=edge,chrome=1',
@@ -40,7 +39,7 @@ export function page<Args extends any[]>({
     keywords = empty_array,
     baseHref = empty_string,
     baseTarget = empty_string,
-}: Partial<Props>, nodes: (...args: Args) => void, ...args: Args): void {
+}: Partial<Props>): void {
     doctype('html');
     tag('html'); {
         tag('head'); {
@@ -115,8 +114,15 @@ export function page<Args extends any[]>({
                 } end();
             }
         } end();
-        tag('body'); {
-            nodes(...args);
+        tag('body');
+    }
+}
+
+export function page_close({
+    scripts = empty_array,
+}: Partial<Props>) {
+    {
+        {
             for (const res of scripts) {
                 if ('link' in res) {
                     tag('script'); {
@@ -142,13 +148,12 @@ export interface PropsLite {
     title: string;
 };
 
-export function page_lite<Args extends any[]>({
-    scripts = empty_array,
+export function page_lite_open({
     styles = empty_array,
     compat = 'IE=edge,chrome=1',
     settings = empty_object as Record<string, string>,
     title = empty_string,
-}: Partial<PropsLite>, nodes: (...args: Args) => void, ...args: Args) {
+}: Partial<PropsLite>) {
     doctype('html');
     tag('html'); {
         tag('head'); {
@@ -191,8 +196,15 @@ export function page_lite<Args extends any[]>({
                 } end();
             }
         } end();
-        tag('body'); {
-            nodes(...args);
+        tag('body');
+    }
+}
+
+export function page_lite_close({
+    scripts = empty_array,
+}: Partial<PropsLite>) {
+    {
+        {
             for (const res of scripts) {
                 if ('link' in res) {
                     tag('script'); {

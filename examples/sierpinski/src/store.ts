@@ -39,8 +39,29 @@ export interface Over<T> {
     (v: T): T;
 }
 
-export function over<T>(s: Store<T>, f: Over<T>) {
-    s.p(f(s.g()));
+export function over<T>(s: Store<T>, f: Over<T>, f1?: Over<T>, f2?: Over<T>, f3?: Over<T>, ...fs: Over<T>[]): void;
+export function over<T>(s: Store<T>, f: Over<T>, f1?: Over<T>, f2?: Over<T>, f3?: Over<T>) {
+    if (f1) {
+        if (f2) {
+            if (f3) {
+                if (arguments.length > 5) {
+                    let v: any = s.g();
+                    for (let i = 1; i < arguments.length; i++) {
+                        v = arguments[i](v);
+                    }
+                    s.p(v);
+                } else {
+                    s.p(f3((f2(f1(f(s.g()))))));
+                }
+            } else {
+                s.p(f2(f1(f(s.g()))));
+            }
+        } else {
+            s.p(f1(f(s.g())));
+        }
+    } else {
+        s.p(f(s.g()));
+    }
 }
 
 interface StoreImpl<T, X = any> extends Store<T> {
