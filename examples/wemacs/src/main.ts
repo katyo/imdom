@@ -22,7 +22,7 @@ export function init(store: Store<State>) {
 
 export function view(store: Store<State>) {
     const editor_store = lens(store, 'editor');
-    const { language } = get(editor_store);
+    const { language, out_language } = get(editor_store);
 
     page_lite_open(page_props); {
         // language mode select
@@ -39,7 +39,7 @@ export function view(store: Store<State>) {
                 if (once()) {
                     iattr('value', 'auto');
                 }
-                text("auto");
+                text(out_language ? `auto (${out_language})` : "auto");
             } end();
 
             const langs = languages();

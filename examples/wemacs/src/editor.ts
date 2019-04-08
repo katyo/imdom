@@ -1,5 +1,5 @@
-import { highlight } from './highlight';
-import { Store, Over, set, get, over, change } from './store';
+import { AST, process, highlight } from './highlight';
+import { Store, Over, set, get, over } from './store';
 import { DomElement, _, NOOP, tag, end, once, iattr, ievent, current, element_of, after } from 'imdom';
 import { KeyCode, ModKey, Selection, document_of, once_event/*, add_event, remove_event*/, cancel_event, key_char, mod_keys, selection_of, selection_to, selection_len, selection_cut, selection_copy } from 'imdom';
 
@@ -11,21 +11,23 @@ export interface On {
 export interface State extends On {
     language: string | 'auto';
     content: string;
+    out_language: string;
+    out_content: AST,
     selection: Selection;
 }
 
 export function init(store: Store<State>, { change = NOOP, select = NOOP }: Partial<On> = {}) {
-    set(store, {
+    set(store, update_highlight({
         change,
         select,
         language: 'auto',
         content: '',
         selection: { s: 0, e: 0 }
-    });
+    } as State));
 }
 
 export function view(store: Store<State>) {
-    const { language, content, selection } = get(store);
+    const { out_content, selection } = get(store);
 
     // editor textarea
     tag('pre'); {
@@ -111,16 +113,21 @@ export function view(store: Store<State>) {
         if (element_of(node)) {
             after(selection_to, node, selection);
         }
-        highlight(content, language != 'auto' ? language : _);
+        highlight(out_content);
     } end();
 }
 
 export function set_language(language: string): Over<State> {
-    return change<State>({ language });
+    return state => update_highlight({ ...state, language });
 }
 
 export function set_content(content: string): Over<State> {
-    return state => (state.change(), { ...state, content });
+    return state => (state.change(), update_highlight({ ...state, content }));
+}
+
+function update_highlight(state: State): State {
+    const result = process(state.content, state.language != 'auto' ? state.language : _);
+    return { ...state, out_language: result.language, out_content: result.value };
 }
 
 export function set_selection(selection: Selection): Over<State> {

@@ -1,4 +1,4 @@
-import { Highlighter, Renderer, Options, listLanguages, init, process } from 'highlight-ts';
+import { Highlighter, Renderer, Result, Options, listLanguages, init, process } from 'highlight-ts';
 import { _, tag, end, text } from 'imdom';
 
 export type AST = ASTNode[] | ASTNode;
@@ -20,11 +20,13 @@ export const astRender: ASTRenderer = {
 
 export type ASTHighlighter = Highlighter<AST>;
 
+/** Initialize syntax highlighter */
 export function initHighlight(options?: Options): ASTHighlighter {
     return init(astRender, options);
 }
 
-export function viewHighlight(highlighter: ASTHighlighter, src: string, lang?: string | string[]): string {
+/** Process syntax highlighting */
+export function procHighlight(highlighter: ASTHighlighter, src: string, lang?: string | string[]): Result<AST> {
     if (lang) {
         const langs = listLanguages();
         // remove unsupported languages to prevent fault
@@ -34,21 +36,20 @@ export function viewHighlight(highlighter: ASTHighlighter, src: string, lang?: s
             lang = lang.filter(lang => langs.indexOf(lang) >= 0);
         }
     }
-    const { value, language } = process(highlighter, src, lang);
-    render_ast(value);
-    return language;
+    return process(highlighter, src, lang);
 }
 
-function render_ast(ast: AST): void {
+/** Render abstract syntax tree */
+export function viewHighlight(ast: AST): void {
     if (typeof ast == 'string') {
         text(ast);
     } else if (!('length' in ast)) {
         tag('span', _, ast.c);
-        render_ast(ast._);
+        viewHighlight(ast._);
         end();
     } else {
         for (let i = 0; i < ast.length; i++) {
-            render_ast(ast[i]);
+            viewHighlight(ast[i]);
         }
     }
 }
