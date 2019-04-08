@@ -511,23 +511,20 @@ export function find_point(root: DomNode, node: Node, offset: number): number {
 function find_point_recurse(state: { p: number }, cur: DomNode, node: Node, offset: number): boolean {
     if (is_text(cur)) {
         if (cur.$ == node) {
-            state.p += min(offset, cur.t.length - 1);
+            state.p += min(offset, cur.t.length);
+            //state.p = offset;
             return true;
         } else {
             state.p += cur.t.length;
             return false;
         }
-    } else if (is_element(cur)) {
-        if (cur.$ == node) {
-            return true;
-        }
-
-        if (cur._.length) {
-            const count = cur.$ == node ? offset : cur._.length;
-            for (let i = 0; i < count; i++) {
-                if (find_point_recurse(state, cur._[i], node, offset)) {
-                    return true;
-                }
+    } else if (cur.$ == node) {
+        return true;
+    } if (is_element(cur) && cur._.length) {
+        const count = cur.$ == node ? offset : cur._.length;
+        for (let i = 0; i < count; i++) {
+            if (find_point_recurse(state, cur._[i], node, offset)) {
+                return true;
             }
         }
     }
