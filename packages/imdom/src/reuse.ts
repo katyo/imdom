@@ -356,8 +356,8 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                         // when merged segment after heaviest segment
                         h.n ? // when we have next segment
                         h.n._[0] : // insert extra nodes before first node of segment after heaviest
-                        ( // when we haven't next element
-                            append(s_[--n]!, h_[h_.length - 1], ctx), // append last inserting node
+                        ( // when we haven't next segment
+                            append(s_[--n]!, o && l ? o._[l - 1] : h_[h_.length - 1], ctx), // append last inserting node
                             // exclude appended node from insertion
                             s_[n]! // use last node as reference for prepending
                         );

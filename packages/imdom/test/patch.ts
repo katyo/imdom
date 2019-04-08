@@ -128,6 +128,35 @@ describe('patch', () => {
             se(n1.$.childNodes[0].textContent, 'main text');
             se(n2.$.childNodes[0].textContent, 'description');
         });
+
+        it('reuse single node, append several nodes at end', () => {
+            patch(vdom); {
+                text('interface Person {\n');
+                tag('span', _, 'hl-code'); {
+                    text('    name: string;');
+                } end();
+                text('\n}\n');
+            } end();
+
+            se(vdom.$.innerHTML, 'interface Person {\n<span class="hl-code">    name: string;</span>\n}\n');
+
+            patch(vdom); {
+                tag('span', _, 'hl-keyword'); {
+                    text('interface');
+                } end();
+                text(' ');
+                tag('span', _, 'hl-title'); {
+                    text('Person');
+                } end();
+                text(' {\n    name: ');
+                tag('span', _, 'hl-builtin'); {
+                    text('string');
+                } end();
+                text(';\n}\n');
+            } end();
+
+            se(vdom.$.innerHTML, '<span class="hl-keyword">interface</span> <span class="hl-title">Person</span> {\n    name: <span class="hl-builtin">string</span>;\n}\n');
+        });
     });
 
     describe('snabbdom', () => {
