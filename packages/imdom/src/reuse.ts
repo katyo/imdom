@@ -2,7 +2,8 @@
  * @module reuse
  */
 
-import { NULL } from './utils';
+import { TRACE_REUSE } from './decls';
+import { NULL, trace } from './utils';
 
 /*
   reconciliation:
@@ -148,6 +149,8 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
         b, // last destination segment
     } = state;
 
+    if (TRACE_REUSE) trace('split segment', c, i);
+
     const {
         _, // segment nodes
         _: {
@@ -211,6 +214,8 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
     let i: number; // node index
     let n: T | undefined;
 
+    if (TRACE_REUSE) trace('reuse node', ctx, next);
+
     for (; c; ) {
         for (; c != e; c = c!.n) { // iterate over source segments
             if (is_remove(c!)) { // when segment is to remove
@@ -256,6 +261,8 @@ export function push_node<T>(state: Reconciler<T>, node: T) {
         b: last, // last destination segment
     } = state;
 
+    if (TRACE_REUSE) trace('push node', node);
+
     if (last // we have last destination segment
         && is_insert(last)) { // and it is marked to insert
 
@@ -270,6 +277,36 @@ export function push_node<T>(state: Reconciler<T>, node: T) {
 
 export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T, ctx: X) => void, prepend: (node: T, ref: T, ctx: X) => void, append: (node: T, ref: T | undefined, ctx: X) => void, remove: (node: T, ctx: X) => void, ctx: X): T[] {
     // find heaviest reused segment to start optimization
+
+    if (TRACE_REUSE) {
+        const nodes: T[] = [];
+        let seg: Segment<T> | undefined;
+        const src = [];
+        for (seg = state.s; seg; seg = seg.n) {
+            for (let i = 0; i < seg._.length; i++) {
+                const node = seg._[i];
+                let index = nodes.indexOf(node);
+                if (index < 0) {
+                    index = nodes.length;
+                    nodes.push(node);
+                }
+                src.push((seg.t == Op.Remove ? '-' : '') + index);
+            }
+        }
+        const dst = [];
+        for (seg = state.a; seg; seg = seg.a) {
+            for (let i = 0; i < seg._.length; i++) {
+                const node = seg._[i];
+                let index = nodes.indexOf(node);
+                if (index < 0) {
+                    index = nodes.length;
+                    nodes.push(node);
+                }
+                dst.push((seg.t == Op.Insert ? '+' : '') + index);
+            }
+        }
+        trace('reconcile', src.join(' '), '=>', dst.join(' '));
+    }
 
     let i: number; // index of node
     let j: number; // helper index

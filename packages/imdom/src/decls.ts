@@ -13,6 +13,11 @@ export const DEBUG = process.env.NODE_ENV == 'development';
 export const BROWSER = process.env.JS_TARGET != 'server';
 
 /**
+ * Enable tracing reconciliation
+ */
+export const TRACE_REUSE = false;
+
+/**
  * Enable tracing DOM operations
  */
 export const TRACE_DOMOP = false;
@@ -35,4 +40,4 @@ export const BENCH_DOMOP = false;
 /**
  * Minimum time between printing stats
  */
-export const STATS_INTERVAL = 5000;
+export const STATS_INTERVAL = 3000;
