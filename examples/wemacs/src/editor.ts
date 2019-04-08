@@ -1,6 +1,6 @@
 import { AST, process, highlight } from './highlight';
 import { Store, Over, set, get, over } from './store';
-import { DomElement, _, NOOP, tag, end, once, iattr, ievent, current, element_of, after } from 'imdom';
+import { DomElement, _, NOOP, tag, end, text, once, iattr, ievent, current, element_of, after } from 'imdom';
 import { KeyCode, ModKey, Selection, document_of, once_event/*, add_event, remove_event*/, cancel_event, key_char, mod_keys, selection_of, selection_to, selection_len, selection_cut, selection_copy } from 'imdom';
 
 export interface On {
@@ -11,6 +11,7 @@ export interface On {
 export interface State extends On {
     language: string | 'auto';
     content: string;
+    lines: number;
     out_language: string;
     out_content: AST,
     selection: Selection;
@@ -27,93 +28,108 @@ export function init(store: Store<State>, { change = NOOP, select = NOOP }: Part
 }
 
 export function view(store: Store<State>) {
-    const { out_content, selection } = get(store);
+    const { lines, out_content, selection } = get(store);
 
-    // editor textarea
-    tag('pre'); {
-        const node = current();
-        if (once()) {
-            iattr('contenteditable');
-            iattr('spellcheck', false);
-            ievent('mousedown', () => {
-                const doc = document_of(element_of(node));
+    tag('div', _, 'editor-container'); {
+        // line numbers
+        tag('pre', _, 'editor-line-no'); {
+            for (let i = 1; i <= lines; i++) {
+                text(`${i}\n`);
+            }
+        } end();
 
-                once_event(doc, 'mouseup', () => {
-                    //remove_event(doc, 'mousemove', handle);
-                    emit_selection(store, node);
-                });
+        // editor textarea
+        tag('pre', _, 'editor-content'); {
+            const node = current();
+            if (once()) {
+                iattr('contenteditable');
+                iattr('spellcheck', false);
+                iattr('autocapitalize', 'off');
+                iattr('autocomplete', 'off');
+                iattr('autocorrect', 'off');
+                ievent('mousedown', () => {
+                    const doc = document_of(element_of(node));
 
-                /*add_event(doc, 'mousemove', handle);
-
-                function handle() {
-                    emit_selection(store, node);
-                }*/
-            });
-            /*ievent('scroll', () => {
-                emit_selection(store, node);
-            });*/
-            ievent('keypress', event => {
-                const char = key_char(event);
-                if (!mod_keys(event, ModKey.Ctrl | ModKey.Alt | ModKey.Meta) && char) {
-                    cancel_event(event);
-                    emit_input(store, char);
-                }
-            });
-            ievent('keyup', event => {
-                switch (event.keyCode) {
-                    case KeyCode.LeftArrow:
-                    case KeyCode.UpArrow:
-                    case KeyCode.RightArrow:
-                    case KeyCode.DownArrow:
+                    once_event(doc, 'mouseup', () => {
+                        //remove_event(doc, 'mousemove', handle);
                         emit_selection(store, node);
-                        break;
-                }
-            });
-            ievent('keydown', event => {
-                switch (event.keyCode) {
-                    case KeyCode.Enter:
-                    case KeyCode.Backspace:
-                    case KeyCode.Delete:
+                    });
+
+                    /*add_event(doc, 'mousemove', handle);
+
+                      function handle() {
+                      emit_selection(store, node);
+                      }*/
+                });
+                /*ievent('scroll', () => {
+                  emit_selection(store, node);
+                  });*/
+                ievent('keypress', event => {
+                    const char = key_char(event);
+                    if (!mod_keys(event, ModKey.Ctrl | ModKey.Alt | ModKey.Meta) && char) {
                         cancel_event(event);
-                        emit_input(store, event.keyCode);
-                        break;
-                }
-            });
-            ievent('cut', event => {
-                cancel_event(event);
-                try {
-                    document_of(element_of(node)).execCommand('copy');
-                } catch (e) {
-                    const { content, selection } = get(store);
-                    const text = selection_copy(content, selection);
-                    console.log('copy fallback', text);
-                    window.prompt('Press Ctrl-C and Enter', text);
-                }
-                emit_input(store, '');
-            });
-            ievent('copy', event => {
-                cancel_event(event);
-                const { clipboardData } = event;
-                if (clipboardData) {
-                    const { content, selection } = get(store);
-                    const text = selection_copy(content, selection);
-                    console.log('copy', text);
-                    clipboardData.setData('text/plain', text);
-                }
-            });
-            ievent('paste', event => {
-                cancel_event(event);
-                const { clipboardData } = event;
-                if (clipboardData) {
-                    console.log('paste', clipboardData.getData('text/plain'));
-                    emit_input(store, clipboardData.getData('text/plain'));
-                }
-            });
-        }
-        if (element_of(node)) {
-            after(selection_to, node, selection);
-        }
-        highlight(out_content);
+                        emit_input(store, char);
+                    }
+                });
+                ievent('keyup', event => {
+                    switch (event.keyCode) {
+                        case KeyCode.LeftArrow:
+                        case KeyCode.UpArrow:
+                        case KeyCode.RightArrow:
+                        case KeyCode.DownArrow:
+                            emit_selection(store, node);
+                            break;
+                    }
+                });
+                ievent('keydown', event => {
+                    switch (event.keyCode) {
+                        case KeyCode.Enter:
+                        case KeyCode.Backspace:
+                        case KeyCode.Delete:
+                            cancel_event(event);
+                            emit_input(store, event.keyCode);
+                            break;
+                    }
+                });
+                ievent('cut', event => {
+                    cancel_event(event);
+                    try {
+                        document_of(element_of(node)).execCommand('copy');
+                    } catch (e) {
+                        const { content, selection } = get(store);
+                        const text = selection_copy(content, selection);
+                        console.log('copy fallback', text);
+                        window.prompt('Press Ctrl-C and Enter', text);
+                    }
+                    emit_input(store, '');
+                });
+                ievent('copy', event => {
+                    cancel_event(event);
+                    const { clipboardData } = event;
+                    if (clipboardData) {
+                        const { content, selection } = get(store);
+                        const text = selection_copy(content, selection);
+                        console.log('copy', text);
+                        clipboardData.setData('text/plain', text);
+                    }
+                });
+                ievent('paste', event => {
+                    cancel_event(event);
+                    const { clipboardData } = event;
+                    if (clipboardData) {
+                        console.log('paste', clipboardData.getData('text/plain'));
+                        emit_input(store, clipboardData.getData('text/plain'));
+                    }
+                });
+            }
+            if (element_of(node)) {
+                after(selection_to, node, selection);
+            }
+            tag('code'); {
+                highlight(out_content);
+            } end();
+            text('\n');
+        } end();
     } end();
 }
 
@@ -126,12 +142,14 @@ export function set_content(content: string): Over<State> {
 }
 
 function update_highlight(state: State): State {
+    const lines = (state.content.match(/\n/g) || '').length + 1;
     const result = process(state.content, state.language != 'auto' ? state.language : _);
-    return { ...state, out_language: result.language, out_content: result.value };
+    return { ...state, lines, out_language: result.language, out_content: result.value };
 }
 
 export function set_selection(selection: Selection): Over<State> {
     return state => (
+        console.log(state.content, state.content.length),
         clamp_selection(selection, state.content.length),
         equal_selection(state.selection, selection) ? state :
             (console.log('set_selection', selection),

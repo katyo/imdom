@@ -1,1 +1,34 @@
 @import "highlight-ts/styles/docco";
+
+.editor-container {
+  display: flex;
+  overflow: auto;
+  align-items: flex-start;
+  width: 100%;
+  height: 100%;
+  font-size: 14px;
+}
+
+.editor-line-no {
+  height: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  text-align: right;
+  background-color: #ddd;
+}
+
+.editor-content {
+  height: 100%;
+  flex-grow: 2;
+  box-sizing: border-box;
+  outline: no;
+  margin-left: 8px;
+  background-color: #eee;
+  border: 0;
+  border-radius: 0;
+}
+
+.editor-content:focus {
+  border: 0;
+  border-radius: 0;
+}
