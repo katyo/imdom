@@ -3,14 +3,7 @@
  */
 
 import { DomFlags, DomAttrs, DomStyles, DomNode, DomNodes, DomElement, DomDocType, DomFragment } from './types';
-import { EMPTY_STRING, node_selector } from './utils';
-
-const enum NodeType {
-    Element = 1,
-    Text = 3,
-    Comment = 8,
-    DocType = 10,
-}
+import { NodeType, EMPTY_STRING, node_selector } from './utils';
 
 /** Parse DOM element into virtual DOM element */
 export function parse(node: Element): DomElement;

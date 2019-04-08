@@ -32,6 +32,34 @@ export function assert(val: any, msg: string, ...args: any[]) {
     }
 }
 
+export const enum NodeType {
+    Element = 1,
+    Text = 3,
+    Comment = 8,
+    DocType = 10,
+}
+
+/** Show DOM node */
+export function show_node(node: Node): string {
+    switch (node.nodeType) {
+        case NodeType.Element:
+            let out = '<' + (node as Element).tagName.toLowerCase();
+            const id = (node as Element).getAttribute('id');
+            if (id) out += '#' + id;
+            const cls = (node as Element).getAttribute('class');
+            if (cls) out += '.' + cls.replace(/\s/, '.');
+            return out + '>';
+        case NodeType.Text:
+            return '"' + ((node as Text).textContent || EMPTY_STRING).replace(/\n/g, '\\n') + '"';
+        case NodeType.Comment:
+            return '/*' + ((node as Comment).textContent || EMPTY_STRING).replace(/\n/g, '\\n') + '*/'
+        case NodeType.DocType:
+            return '<!DOCTYPE ' + (node as DocumentType).name + '>';
+        default:
+            return '<>';
+    }
+}
+
 /** Check when some value is defined */
 export function is_defined<T>(v: T | undefined | null | void): v is T {
     return v != NULL;

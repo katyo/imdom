@@ -1,5 +1,5 @@
 import { BROWSER, TRACE_DOMOP, BENCH_DOMOP } from './decls';
-import { NULL, EMPTY_STRING, is_defined, trace } from './utils';
+import { NULL, EMPTY_STRING, is_defined, trace, show_node } from './utils';
 import { DomDocTypeSpec, DomStyleMap, DomAttrName, DomAttrType, DomEventMap, DomEventFn } from './types';
 import { bench_init, bench_start, bench_stop } from './bench';
 
@@ -16,7 +16,7 @@ export function create_element(tag: string, ns?: string): Element {
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 
-    if (TRACE_DOMOP) trace('create element', node);
+    if (TRACE_DOMOP) trace('create element', show_node(node));
 
     return node;
 }
@@ -29,7 +29,7 @@ export function create_text(str: string): Text {
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 
-    if (TRACE_DOMOP) trace('create text', node);
+    if (TRACE_DOMOP) trace('create text', show_node(node));
 
     return node;
 }
@@ -42,7 +42,7 @@ export function create_comment(str: string): Comment {
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 
-    if (TRACE_DOMOP) trace('create comment', node);
+    if (TRACE_DOMOP) trace('create comment', show_node(node));
 
     return node;
 }
@@ -55,14 +55,14 @@ export function create_doctype(dt: DomDocTypeSpec): DocumentType {
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 
-    if (TRACE_DOMOP) trace('create doctype', node);
+    if (TRACE_DOMOP) trace('create doctype', show_node(node));
 
     return node;
 }
 
 /** Set text content of node */
 export function set_text(node: Text | Comment | Element, str: string) {
-    if (TRACE_DOMOP) trace('set text', `"${str}"`, 'to', node);
+    if (TRACE_DOMOP) trace('set text', `"${str}"`, 'to', show_node(node));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -73,7 +73,7 @@ export function set_text(node: Text | Comment | Element, str: string) {
 
 /** Replace child DOM node in parent DOM node by other DOM node */
 export function replace_node(parent: Node, other: Node, child: Node) {
-    if (TRACE_DOMOP) trace('replace node', child, 'in', parent, 'by', other);
+    if (TRACE_DOMOP) trace('replace node', show_node(child), 'in', show_node(parent), 'by', show_node(other));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -84,7 +84,7 @@ export function replace_node(parent: Node, other: Node, child: Node) {
 
 /** Insert child DOM node to parent DOM node before other child DOM node */
 export function prepend_node(parent: Node, child: Node, other: Node) {
-    if (TRACE_DOMOP) trace('insert node', child, 'to', parent, 'before', other);
+    if (TRACE_DOMOP) trace('insert node', show_node(child), 'to', show_node(parent), 'before', show_node(other));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -97,9 +97,9 @@ export function prepend_node(parent: Node, child: Node, other: Node) {
 export function append_node(parent: Node, child: Node, other: Node | undefined = NULL) {
     if (TRACE_DOMOP) {
         if (other) {
-            trace('insert node', child, 'to', parent, 'after', other);
+            trace('insert node', show_node(child), 'to', show_node(parent), 'after', show_node(other));
         } else {
-            trace('append node', child, 'to', parent);
+            trace('append node', show_node(child), 'to', show_node(parent));
         }
     }
 
@@ -116,7 +116,7 @@ export function append_node(parent: Node, child: Node, other: Node | undefined =
 
 /** Remove child DOM node from parent DOM node */
 export function remove_node(parent: Node, child: Node) {
-    if (TRACE_DOMOP) trace('remove node', child, 'from', parent);
+    if (TRACE_DOMOP) trace('remove node', show_node(child), 'from', show_node(parent));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -127,7 +127,7 @@ export function remove_node(parent: Node, child: Node) {
 
 /** Add class to DOM element */
 export function add_class(elm: Element, name: string) {
-    if (TRACE_DOMOP) trace('add class', name, 'to', elm);
+    if (TRACE_DOMOP) trace('add class', name, 'to', show_node(elm));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -138,7 +138,7 @@ export function add_class(elm: Element, name: string) {
 
 /** Remove class from DOM element */
 export function remove_class(elm: Element, name: string) {
-    if (TRACE_DOMOP) trace('remove class', name, 'from', elm);
+    if (TRACE_DOMOP) trace('remove class', name, 'from', show_node(elm));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -149,7 +149,7 @@ export function remove_class(elm: Element, name: string) {
 
 /** Set style property to DOM element */
 export function set_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S, val: DomStyleMap[S]) {
-    if (TRACE_DOMOP) trace('set style', name, '=', val, 'to', elm);
+    if (TRACE_DOMOP) trace('set style', name, '=', val, 'to', show_node(elm));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -160,7 +160,7 @@ export function set_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S
 
 /** Remove style property from DOM element */
 export function remove_style<S extends keyof DomStyleMap>(elm: HTMLElement, name: S) {
-    if (TRACE_DOMOP) trace('remove style', name, 'from', elm);
+    if (TRACE_DOMOP) trace('remove style', name, 'from', show_node(elm));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -171,7 +171,7 @@ export function remove_style<S extends keyof DomStyleMap>(elm: HTMLElement, name
 
 /** Set attribute to DOM element */
 export function set_attr<A extends DomAttrName>(elm: Element, name: A, val: DomAttrType<A>) {
-    if (TRACE_DOMOP) trace('set attr', name, '=', `"${val}"`, 'to', elm);
+    if (TRACE_DOMOP) trace('set attr', name, '=', `"${val}"`, 'to', show_node(elm));
 
     const undef = !is_defined(val);
 
@@ -190,7 +190,7 @@ export function set_attr<A extends DomAttrName>(elm: Element, name: A, val: DomA
 
 /** Remove attribute from DOM element */
 export function remove_attr<A extends DomAttrName>(elm: Element, name: A, val: DomAttrType<A>) {
-    if (TRACE_DOMOP) trace('remove attr', name, 'from', elm);
+    if (TRACE_DOMOP) trace('remove attr', name, 'from', show_node(elm));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -209,7 +209,7 @@ export type EventNode = Element | Document | Window;
 
 /** Add event listener to DOM element */
 export function add_event<E extends keyof DomEventMap>(elm: EventNode, name: E, fn: DomEventFn<E>) {
-    if (TRACE_DOMOP) trace('add event', name, 'to', elm);
+    if (TRACE_DOMOP) trace('add event', name, 'to', show_node(elm as Node));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
@@ -220,7 +220,7 @@ export function add_event<E extends keyof DomEventMap>(elm: EventNode, name: E, 
 
 /** Remove event listener from DOM element */
 export function remove_event<E extends keyof DomEventMap>(elm: EventNode, name: E, fn: DomEventFn<E>) {
-    if (TRACE_DOMOP) trace('remove event', name, 'from', elm);
+    if (TRACE_DOMOP) trace('remove event', name, 'from', show_node(elm as Node));
 
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
