@@ -493,10 +493,10 @@ export function selection_of(node: DomNode): Selection {
     const sel = doc.getSelection()!;
     if (DEBUG) assert(sel, 'Cannot get selection from document', doc);
 
-    const start = find_point(node, sel.anchorNode, sel.anchorOffset);
+    const start = find_point(node, sel.anchorNode!, sel.anchorOffset);
 
     return sel.isCollapsed ? { s: start, e: start } :
-        { s: start, e: find_point(node, sel.focusNode, sel.focusOffset) };
+        { s: start, e: find_point(node, sel.focusNode!, sel.focusOffset) };
 }
 
 /** Get character position in DOM */

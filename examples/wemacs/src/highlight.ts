@@ -12,7 +12,7 @@ import {
     Rust,
     TypeScript,
     Markdown
-} from 'imdom-highlight';
+} from '@imdom/highlight';
 
 export { listLanguages as languages };
 

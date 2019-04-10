@@ -1,5 +1,5 @@
 import { Store, set, get, over, lens, change } from './store';
-import { _, doctype, tag, end, text, once, iattr, istyle, style, ievent } from 'imdom';
+import { BROWSER, _, doctype, tag, end, text, once, iattr, istyle, style, ievent } from '@imdom/core';
 
 export interface State {
     seconds: number;
@@ -13,7 +13,7 @@ export function init(store: Store<State>) {
         start: new Date().getTime(),
     } as State);
 
-    if (process.env.JS_TARGET != 'server') {
+    if (BROWSER) {
         setInterval(() => {
             over(store, (state: State) =>
                  ({
@@ -63,7 +63,7 @@ export function view(store: Store<State>) {
                 text("Sierpinski Triangles");
             } end();
             tag('div', 'container'); {
-                if (process.env.JS_TARGET != 'server') {
+                if (BROWSER) {
                     const state = get(store);
                     const elapsed = new Date().getTime() - state.start;
                     const t = (elapsed / 1000) % 10;

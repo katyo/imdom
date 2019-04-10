@@ -1,6 +1,5 @@
-import { _, tag, end, text, once, iattr, ievent, attr, class_, element } from 'imdom';
+import { KeyCode, _, tag, end, text, once, iattr, ievent, attr, class_, element } from '@imdom/core';
 import { Store, get, set, over, toggle, change } from './store';
-import { KeyCode } from './keys';
 
 export interface Data {
     content: string,
@@ -54,7 +53,7 @@ export function view(store: Store<State>) {
             tag('label'); {
                 if (once()) {
                     ievent('dblclick', () => {
-                        over(store, change({editing: true}));
+                        over(store, change<State>({editing: true}));
                     });
                 }
                 text(content);
@@ -71,14 +70,14 @@ export function view(store: Store<State>) {
             const elm = element<HTMLInputElement>();
             if (once()) {
                 ievent('blur', () => {
-                    over(store, change({
+                    over(store, change<State>({
                         content: elm.value,
                         editing: false
                     }));
                 });
                 ievent('keydown', e => {
                     if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
-                        over(store, change({
+                        over(store, change<State>({
                             content: elm.value,
                             editing: false
                         }));

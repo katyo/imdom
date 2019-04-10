@@ -1,11 +1,11 @@
 import { BROWSER, TRACE_DOMOP, BENCH_DOMOP } from './decls';
 import { NULL, EMPTY_STRING, is_defined, trace, show_node } from './utils';
 import { DomDocTypeSpec, DomStyleMap, DomAttrName, DomAttrType, DomEventMap, DomEventFn } from './types';
-import { bench_init, bench_start, bench_stop } from './bench';
+import { Bench, bench_init, bench_start, bench_stop } from './bench';
 
 const doc: Document = (BROWSER && document) as Document;
 
-export const domop_stats = BROWSER && BENCH_DOMOP ? bench_init() : NULL;
+export const domop_stats: Bench | undefined = BROWSER && BENCH_DOMOP ? bench_init() : NULL;
 
 /** Create new DOM element node */
 export function create_element(tag: string, ns?: string): Element {

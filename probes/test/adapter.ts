@@ -1,9 +1,8 @@
-import * as benchmark from 'benchmark';
 import { Suite, Event } from 'benchmark';
 
-if (typeof window != 'undefined') {
-    (window as any).Benchmark = benchmark;
-}
+//if (typeof window != 'undefined') {
+//    (window as any).Benchmark = Benchmark;
+//}
 
 const print: (...args: any[]) => void =
     typeof window != 'undefined' ? (...args) => {

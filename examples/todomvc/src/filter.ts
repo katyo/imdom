@@ -1,4 +1,4 @@
-import { tag, end, text, once, iattr, ievent, class_ } from 'imdom';
+import { tag, end, text, once, iattr, ievent, class_ } from '@imdom/core';
 import { Store, get, set } from './store';
 
 export const enum Filter {

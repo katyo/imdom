@@ -1,6 +1,4 @@
-process.env.JS_TARGET = 'server';
-
-import { patch, end, NOOP, prepare, format } from 'imdom';
+import { patch, end, NOOP, prepare, format } from '@imdom/core';
 import { Init, View, render } from './core';
 import { store } from './store';
 

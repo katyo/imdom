@@ -1,7 +1,6 @@
 import { strictEqual as se } from 'assert';
-import { DomFragment, _, parse, patch, end, create_element } from 'imdom';
-import { viewHighlight as view } from '../src';
-import { highlighter } from './setup';
+import { DomFragment, _, parse, patch, end, create_element } from '@imdom/core';
+import { highlight } from './setup';
 
 describe('highlight DOM', () => {
     let vdom: DomFragment;
@@ -12,7 +11,7 @@ describe('highlight DOM', () => {
 
     it('TypeScript', () => {
         patch(vdom); {
-            view(highlighter, `import { _, tag, end, patch } from "imdom";
+            highlight(`import { _, tag, end, patch } from "imdom";
 `);
         } end();
 
@@ -22,7 +21,7 @@ describe('highlight DOM', () => {
 
     it('Rust', () => {
         patch(vdom); {
-            view(highlighter, `
+            highlight(`
 trait Foo {
     fn foo(&self, Box<Foo>);
 }
@@ -38,7 +37,7 @@ trait Foo {
 
     it('Markdown', () => {
         patch(vdom); {
-            view(highlighter, `
+            highlight(`
 # Title
 
 ## Subtitle

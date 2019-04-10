@@ -36,9 +36,11 @@ export default {
         include: 'src/**',
     },
     plugins: [
-        sourceMaps(),
         nodeResolve({
-            browser: true,
+            mainFields: [
+                config.use_babel ? 'module' : 'jsnext:main',
+                'browser'
+            ],
         }),
         postcss({
             extract: true,
@@ -55,11 +57,13 @@ export default {
         typescript({
             tsconfigOverride: {
                 compilerOptions: {
-                    module: 'es2015'
+                    module: 'es2015',
+                    target: config.use_babel ? 'es2018' : 'es5',
                 }
             },
             objectHashIgnoreUnknownHack: true,
         }),
+        sourceMaps(),
         replace({
             'process.env.npm_package_name': stringify(name),
             'process.env.npm_package_version': stringify(version),

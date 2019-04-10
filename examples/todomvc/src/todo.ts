@@ -1,7 +1,6 @@
-import { _, key, tag, end, text, once, iattr, attr, ievent, element } from 'imdom';
+import { KeyCode, _, key, tag, end, text, once, iattr, attr, ievent, element } from '@imdom/core';
 import { Store, get, set, over, lens, adjust, remove } from './store';
 import { render } from './core';
-import { KeyCode } from './keys';
 import * as Filter from './filter';
 import * as Task from './task';
 

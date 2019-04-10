@@ -10,7 +10,7 @@
   "before_tests": "npm run build:test",
   "on_exit": "npm run clean:test",
   "launchers": {
-    "nodejs": {
+    "node": {
       "command": "../../node_modules/.bin/mocha -r ts-node/register test/node.ts -R tap",
       "protocol": "tap"
     }
@@ -21,7 +21,7 @@
       "--disable-setuid-sandbox"
     ]
   },
-  "launch_in_ci": [ "firefox", "chromium", "nodejs" ],
+  "launch_in_ci": [ "firefox", "chromium", "node" ],
   "ignore_missing_launchers": true,
-  "launch_in_dev": [ "firefox", "chromium", "safari", "nodejs" ]
+  "launch_in_dev": [ "firefox", "chromium", "safari", "node" ]
 }

@@ -1,11 +1,11 @@
-import { _, parse, patch, end } from 'imdom';
+import { _, parse, patch, end } from '@imdom/core';
 import { Init, View, render } from './core';
 import { store } from './store';
 
 export function runner<State, Args extends any[]>(init: Init<State, Args>, view: View<State, Args>): (elm: Element | Document, ...args: Args) => void {
-    return (elm: Element, ...args: Args) => {
+    return (elm: Element | Document, ...args: Args) => {
         const state = store<State, void>(refresh, undefined);
-        const frag = parse(elm);
+        const frag = parse(elm as Element);
         let frame: any = _;
 
         init(state, ...args);

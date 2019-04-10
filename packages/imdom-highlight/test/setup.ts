@@ -1,7 +1,9 @@
 import {
     // import basic APIs
     registerLanguages,
-    initHighlight as init,
+    initHighlight,
+    procHighlight,
+    viewHighlight,
 
     // import preferred languages
     Rust,
@@ -16,4 +18,9 @@ registerLanguages(
     Markdown
 );
 
-export const highlighter = init();
+const highlighter = initHighlight();
+
+export function highlight(code: string) {
+    const { value } = procHighlight(highlighter, code);
+    viewHighlight(value);
+}

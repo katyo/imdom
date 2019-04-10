@@ -1,4 +1,4 @@
-import { doctype, tag, end, text, once, iattr, attr } from 'imdom';
+import { doctype, tag, end, text, once, iattr, attr } from '@imdom/core';
 
 const empty_object = {};
 const empty_array: any[] = [];

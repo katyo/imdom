@@ -1,4 +1,4 @@
-import { _, tag, end, text, once, iattr, ievent, attr, current, element_of } from 'imdom';
+import { _, tag, end, text, once, iattr, ievent, attr, current, element_of } from '@imdom/core';
 import { PropsLite, page_lite_open, page_lite_close } from './page';
 import { Store, lens, get, over } from './store';
 import { languages } from './highlight';

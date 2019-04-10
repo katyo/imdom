@@ -1,5 +1,5 @@
 import { Store, set, lens } from './store';
-import { _, tag, end, iattr, text, once, class_ } from 'imdom';
+import { _, tag, end, iattr, text, once, class_ } from '@imdom/core';
 import { render } from './core';
 import { PropsLite, page_lite_open, page_lite_close } from './page';
 import * as Todo from './todo';

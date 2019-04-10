@@ -1,4 +1,4 @@
-import { Store/*, get*/ } from './store';
+import { Store } from './store';
 
 export const nokey: undefined = undefined;
 

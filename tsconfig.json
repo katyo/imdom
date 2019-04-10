@@ -1,25 +1,3 @@
 {
-  "extends": "./tsconfig.checks.json",
-  "compilerOptions": {
-    "baseUrl": ".",
-    "target": "es2016",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": [
-      "es2015",
-      "es2016",
-      "dom"
-    ],
-    "types": [
-      "node"
-    ],
-    "paths": {
-      "ivi-isomorph": [
-        "ivi-isomorph/src"
-      ]
-    }
-  },
-  "include": [
-    "ivi-isomorph/src/**/*.ts"
-  ]
+  "extends": "./scripts/tsconfig.json"
 }

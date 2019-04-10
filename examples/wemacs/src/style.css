@@ -1,4 +1,4 @@
-@import "highlight-ts/styles/docco";
+@import "@imdom/highlight/styles/docco";
 
 .editor-container {
   display: flex;

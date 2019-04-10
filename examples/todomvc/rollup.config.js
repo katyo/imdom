@@ -30,16 +30,14 @@ export default {
     output: {
         file: join(config.target_dir, `client_${version}.min.js`),
         format: 'cjs',
+        compact: true,
+        //context: 'this',
         sourcemap: true
     },
     watch: {
         include: 'src/**',
     },
     plugins: [
-        sourceMaps(),
-        nodeResolve({
-            browser: true,
-        }),
         postcss({
             extract: true,
             sourceMap: true,
@@ -52,10 +50,18 @@ export default {
                 preset: ['advanced', { autoprefixer: { browsers: ['> 1%'] } }]
             },
         }),
+        nodeResolve({
+            mainFields: [
+                config.use_babel ? 'module' : 'jsnext:main',
+                'browser'
+            ],
+        }),
+        sourceMaps(),
         typescript({
             tsconfigOverride: {
                 compilerOptions: {
-                    module: 'es2015'
+                    module: 'es2015',
+                    target: config.use_babel ? 'es2018' : 'es5',
                 }
             },
             objectHashIgnoreUnknownHack: true,
@@ -64,7 +70,6 @@ export default {
             'process.env.npm_package_name': stringify(name),
             'process.env.npm_package_version': stringify(version),
             'process.env.NODE_ENV': stringify(debug ? 'development' : 'production'),
-            'process.env.JS_TARGET': stringify('browser'),
         }),
         config.use_babel && babel({
             presets: [['@babel/preset-env', {modules: false}]],

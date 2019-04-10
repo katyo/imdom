@@ -1,5 +1,5 @@
 import { Highlighter, Renderer, Result, Options, listLanguages, init, process } from 'highlight-ts';
-import { _, tag, end, text } from 'imdom';
+import { _, tag, end, text } from '@imdom/core';
 
 export type AST = ASTNode[] | ASTNode;
 

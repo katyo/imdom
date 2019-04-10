@@ -38,7 +38,10 @@ export default {
     plugins: [
         sourceMaps(),
         nodeResolve({
-            browser: true,
+            mainFields: [
+                config.use_babel ? 'module' : 'jsnext:main',
+                'browser'
+            ],
         }),
         postcss({
             extract: true,
@@ -55,7 +58,8 @@ export default {
         typescript({
             tsconfigOverride: {
                 compilerOptions: {
-                    module: 'es2015'
+                    module: 'es2015',
+                    target: config.use_babel ? 'es2018' : 'es5',
                 }
             },
             objectHashIgnoreUnknownHack: true,
@@ -64,7 +68,6 @@ export default {
             'process.env.npm_package_name': stringify(name),
             'process.env.npm_package_version': stringify(version),
             'process.env.NODE_ENV': stringify(debug ? 'development' : 'production'),
-            'process.env.JS_TARGET': stringify('browser'),
         }),
         config.use_babel && babel({
             presets: [['@babel/preset-env', {modules: false}]],

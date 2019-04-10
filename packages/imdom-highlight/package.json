@@ -1,21 +1,24 @@
 {
-  "name": "imdom-highlight",
+  "name": "@imdom/highlight",
   "version": "0.1.0",
   "description": "Code highlighting using ImDOM.",
-  "main": "dist/main/index.js",
-  "module": "dist/module/index.js",
-  "typings": "dist/types/index.d.ts",
+  "main": "./dist/main.js",
+  "jsnext:main": "./dist/jsnext.js",
+  "module": "./dist/module.js",
+  "browser": {
+    "./dist/main.js": "./dist/main.browser.js",
+    "./dist/jsnext.js": "./dist/jsnext.browser.js",
+    "./dist/module.js": "./dist/module.browser.js"
+  },
+  "typings": "./dist/types.d.ts",
   "scripts": {
-    "build": "npm run build:main && npm run build:module",
-    "clean": "npm run clean:main && npm run clean:module",
+    "build": "../../node_modules/.bin/rollup -c",
+    "clean": "rm -rf dist",
     "test": "npm run test:ci && npm run test:ssr",
-    "prepublishOnly": "npm run build && npm run test",
-    "build:module": "../../node_modules/.bin/tsc -p tsconfig.module.json",
-    "clean:module": "rm -rf dist/module",
-    "build:main": "../../node_modules/.bin/tsc -p tsconfig.main.json",
-    "clean:main": "rm -rf dist/main dist/types",
-    "build:test": "../../node_modules/.bin/browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
-    "clean:test": "rm -f test-out.js",
+    "prepack": "npm run build && npm run test && npm run get:styles",
+    "build:test": "JS_TEST=1 ../../node_modules/.bin/rollup -c",
+    "clean:test": "rm -f test-out.js test-out.js.map",
+    "get:styles": "test -d styles || cp -r ./node_modules/highlight-ts/styles ./styles",
     "test:ci": "../../node_modules/.bin/testem ci",
     "test:dev": "../../node_modules/.bin/testem",
     "test:fast": "npm run test:node && npm run test:ssr",
@@ -47,11 +50,14 @@
   "bugs": {
     "url": "https://github.com/katyo/imdom/issues"
   },
-  "dependencies": {
-    "tslib": "^1",
+  "devDependencies": {
     "highlight-ts": "^9.12.1-2"
   },
   "peerDependencies": {
-    "imdom": "^0.1"
-  }
+    "@imdom/core": "^0.1",
+    "tslib": "^1"
+  },
+  "external": [
+    "@imdom/core"
+  ]
 }

@@ -1,7 +1,7 @@
 import { AST, process, highlight } from './highlight';
 import { Store, Over, set, get, over } from './store';
-import { DomElement, _, NOOP, tag, end, text, once, iattr, ievent, current, element_of, after } from 'imdom';
-import { KeyCode, ModKey, Selection, document_of, once_event/*, add_event, remove_event*/, cancel_event, key_char, mod_keys, selection_of, selection_to, selection_len, selection_cut, selection_copy } from 'imdom';
+import { DomElement, _, NOOP, tag, end, text, once, iattr, ievent, current, element_of, after } from '@imdom/core';
+import { KeyCode, ModKey, Selection, document_of, once_event/*, add_event, remove_event*/, cancel_event, key_char, mod_keys, selection_of, selection_to, selection_len, selection_cut, selection_copy } from '@imdom/core';
 
 export interface On {
     change(): void;

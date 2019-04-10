@@ -1,16 +1,6 @@
 {
-  "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "module": "commonjs"
-  },
+  "extends": "../../scripts/tsconfig.json",
   "typedocOptions": {
     "name": "ImDOM",
-    "mode": "modules",
-    "out": "doc",
-    "theme": "../../node_modules/aiden-doc/typedoc_theme",
-    "excludeNotExported": true,
-    "excludePrivate": true,
-    "excludeProtected": true,
-    "hideGenerator": true
   }
 }
