@@ -18,10 +18,16 @@ export function lib({
     module,
     browser,
     typings,
-    external = []
-}) {
+    peerDependencies,
+}, {
+    mangle_props = /^$/,
+} = {}) {
     const configs = [];
     const targets = {main, 'jsnext:main': jsnext_main, module, typings};
+
+    if (Array.isArray(mangle_props)) {
+        mangle_props = new RegExp(`^(?:${mangle_props.join('|')})$`);
+    }
 
     for (const target in targets) {
         const file = targets[target];
@@ -51,7 +57,7 @@ export function lib({
                     sourcemap: target != 'typings',
                 },
 
-                external,
+                external: Object.keys(peerDependencies),
                 watch: {
                     include: 'src/**',
                 },
@@ -96,7 +102,7 @@ export function lib({
                         safari10: true,
                         mangle: {
                             properties: {
-                                regex: /^$/,
+                                regex: mangle_props,
                             },
                         },
                         compress: {

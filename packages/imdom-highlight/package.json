@@ -56,8 +56,5 @@
   "peerDependencies": {
     "@imdom/core": "^0.1",
     "tslib": "^1"
-  },
-  "external": [
-    "@imdom/core"
-  ]
+  }
 }
