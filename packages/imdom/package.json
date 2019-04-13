@@ -12,10 +12,10 @@
   },
   "typings": "./dist/typings.d.ts",
   "scripts": {
-    "build": "../../node_modules/.bin/rollup -c",
+    "dist": "../../node_modules/.bin/rollup -c",
     "clean": "rm -rf dist",
     "test": "npm run test:ci && npm run test:ssr",
-    "prepack": "npm run build && npm run test",
+    "prepack": "npm run dist && npm run test",
     "build:test": "JS_TEST=1 ../../node_modules/.bin/rollup -c",
     "clean:test": "rm -f test-out.js test-out.js.map",
     "test:ci": "../../node_modules/.bin/testem ci",

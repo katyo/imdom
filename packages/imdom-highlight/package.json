@@ -12,10 +12,10 @@
   },
   "typings": "./dist/types.d.ts",
   "scripts": {
-    "build": "../../node_modules/.bin/rollup -c",
+    "dist": "../../node_modules/.bin/rollup -c",
     "clean": "rm -rf dist",
     "test": "npm run test:ci && npm run test:ssr",
-    "prepack": "npm run build && npm run test && npm run get:styles",
+    "prepack": "npm run dist && npm run test && npm run get:styles",
     "build:test": "JS_TEST=1 ../../node_modules/.bin/rollup -c",
     "clean:test": "rm -f test-out.js test-out.js.map",
     "get:styles": "test -d styles || cp -r ./node_modules/highlight-ts/styles ./styles",

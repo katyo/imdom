@@ -2,9 +2,11 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "build": "for pkg in packages/*; do cd $pkg && npm run build && cd -; done",
-    "clean": "for pkg in packages/*; do cd $pkg && npm run clean && cd -; done",
-    "test": "for pkg in packages/*; do cd $pkg && npm run test && cd -; done"
+    "prepare": "make npm/prepare",
+    "build": "make build",
+    "test": "make test",
+    "clean": "make clean",
+    "proper": "make proper"
   },
   "devDependencies": {
     "@babel/cli": "^7",
