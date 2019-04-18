@@ -1,3 +1,5 @@
+/* -*- mode: typescript; -*- */
+import { join } from 'path';
 import sourceMaps from 'rollup-plugin-sourcemaps';
 import nodeResolve from 'rollup-plugin-node-resolve';
 import nodeBuiltins from 'rollup-plugin-node-builtins';
@@ -186,4 +188,159 @@ export function test({
             sourceMaps(),
         ]
     };
+}
+
+export function app({
+    name,
+    version,
+}, {
+    target = 'browser', // | 'server'
+    build_type = process.env.NODE_ENV == 'production' ||
+        process.env.BUILD_TYPE == 'release' ?
+        'release' : 'debug', // undefined | 'debug' | 'release'
+    context = 'this',
+    target_dir = 'dist',
+    use_babel = false,
+    js_minifier = 'uglify',
+    use_postcss = true,
+    compress = true,
+    compressor = 'zopfli',
+    visualize = true,
+    make_deps = false,
+    extend = (config, target, build_type) => config,
+} = {}) {
+    const makeDeps = make_deps && require('rollup-plugin-make').default;
+    const babel = use_babel && require('rollup-plugin-babel');
+    const uglify = js_minifier == 'uglify' && require('rollup-plugin-uglify').uglify;
+    const terser = js_minifier == 'terser' && require('rollup-plugin-terser').terser;
+    const closure_compiler = js_minifier == 'closure-compiler' && require('@ampproject/rollup-plugin-closure-compiler');
+    const postcss = use_postcss && require('rollup-plugin-postcss');
+    const postcss_import = use_postcss && require('postcss-import');
+    const gzip = compress && require('rollup-plugin-gzip').default;
+    const compress_fn = compressor == 'brotli' && require('brotli').compress ||
+        compressor == 'zopfli' && require('node-zopfli').gzip;
+    const visualizer = visualize && require('rollup-plugin-visualizer');
+
+    const debug = build_type == 'debug';
+    const release = build_type == 'release';
+
+    return extend({
+        context,
+        input: `src/client.ts`,
+        output: {
+            file: join(target_dir, `client_${version}.min.js`),
+            format: target == 'browser' ? 'iife' : 'cjs',
+            compact: true,
+            sourcemap: true,
+        },
+        watch: {
+            include: 'src/**',
+        },
+        plugins: [
+            nodeResolve({
+                mainFields: [
+                    use_babel ? 'module' : 'jsnext:main',
+                    ...(target == 'browser' ? ['browser'] : []),
+                ],
+            }),
+            sourceMaps(),
+            typescript({
+                tsconfigOverride: {
+                    compilerOptions: {
+                        module: 'es2015',
+                        target: use_babel ? 'es2018' : 'es5',
+                    }
+                },
+                objectHashIgnoreUnknownHack: true,
+            }),
+            replace({
+                'process.env.npm_package_name': stringify(name),
+                'process.env.npm_package_version': stringify(version),
+                'process.env.NODE_ENV': stringify(debug ? 'development' : 'production'),
+            }),
+            use_babel && babel({
+                presets: [['@babel/preset-env', {modules: false}]],
+                extensions: ['.js', '.ts'],
+            }),
+            release && js_minifier == 'uglify' && uglify({
+                toplevel: true,
+                warnings: true,
+                ie8: true,
+                mangle: {
+                    properties: {
+                        regex: /^\$/,
+                    },
+                },
+                compress: {
+                    keep_fargs: false,
+                    unsafe_comps: true,
+                    unsafe_math: true,
+                    unsafe_undefined: true,
+                    inline: 2,
+                    passes: 2,
+                },
+                output: {
+                    comments: false,
+                }
+            }),
+            release && js_minifier == 'terser' && terser({
+                toplevel: true,
+                warnings: true,
+                ie8: true,
+                safari10: true,
+                ecma: 5,
+                mangle: {
+                    properties: {
+                        regex: /^\$/,
+                    },
+                },
+                compress: {
+                    keep_fargs: false,
+                    unsafe_comps: true,
+                    unsafe_math: true,
+                    unsafe_undefined: true,
+                    inline: 2,
+                    passes: 2,
+                },
+                output: {
+                    comments: false,
+                }
+            }),
+            release && js_minifier == 'closure-compiler' && closure_compiler({
+                compilation_level: 'ADVANCED',
+                warning_level: 'VERBOSE',
+                env: target == 'browser' ? 'BROWSER' : 'CUSTOM',
+                language_in: 'ES5',
+                language_out: 'ES5',
+                rewrite_polyfills: true,
+            }),
+            use_postcss && postcss({
+                extract: true,
+                sourceMap: true,
+                plugins: [
+                    postcss_import({
+                        path: ['node_modules']
+                    })
+                ],
+                minimize: release && {
+                    preset: ['advanced', { autoprefixer: { browsers: ['> 1%'] } }]
+                },
+            }),
+            release && compress && gzip({
+                customCompression: compress && (content => compress_fn(Buffer.from(content))),
+                fileName: compressor == 'brotli' ? '.br' : '.gz',
+                additionalFiles: [
+                    join(target_dir, `client_${version}.min.css`),
+                    join(target_dir, 'client.html')
+                ],
+            }),
+            make_deps && makeDeps({
+                mangle: file => join(target_dir, `${file.replace(target_dir + '/', '')}.d`),
+            }),
+            visualize && visualizer({
+                filename: join(target_dir, 'stats.html'),
+                sourcemap: true
+            }),
+        ],
+    }, target, build_type);
 }

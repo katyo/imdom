@@ -20,12 +20,6 @@
   },
   "config": {
     "target_dir": "dist",
-    "bind_uri": ":8081",
-    "use_babel": false,
-    "js_minifier": "uglify",
-    "make_deps": true,
-    "compress": true,
-    "compressor": "zopfli",
-    "visualize": true
+    "bind_uri": ":8081"
   }
 }

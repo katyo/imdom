@@ -149,7 +149,6 @@ function update_highlight(state: State): State {
 
 export function set_selection(selection: Selection): Over<State> {
     return state => (
-        console.log(state.content, state.content.length),
         clamp_selection(selection, state.content.length),
         equal_selection(state.selection, selection) ? state :
             (console.log('set_selection', selection),
