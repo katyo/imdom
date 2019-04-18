@@ -49,9 +49,7 @@ export interface DomComment extends DomBase<Comment> {
 }
 
 /** Single document type */
-export interface DomDocType extends DomBase<DocumentType> {
-    $spec: DomDocTypeSpec;
-}
+export interface DomDocType extends DomBase<DocumentType>, DomDocTypeSpec {}
 
 /** Document type specifiers */
 export interface DomDocTypeSpec {

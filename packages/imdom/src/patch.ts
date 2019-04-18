@@ -177,11 +177,15 @@ const create_doctype: (dt: DomDocTypeSpec) => DomDocType =
     BROWSER ? (dt) => ({
         $node: dom.create_doctype(dt),
         $flags: DomFlags.DocType,
-        $spec: dt,
+        $name: dt.$name,
+        $pub_id: dt.$pub_id,
+        $sys_id: dt.$sys_id,
     }) : (dt) => ({
         $node: NULL as unknown as DocumentType,
         $flags: DomFlags.DocType,
-        $spec: dt,
+        $name: dt.$name,
+        $pub_id: dt.$pub_id,
+        $sys_id: dt.$sys_id,
     });
 
 const create_element: (sel: Selector) => DomElement =

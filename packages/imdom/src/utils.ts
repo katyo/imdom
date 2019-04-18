@@ -131,7 +131,7 @@ export function match_comment(node: DomNode, str: string): node is DomComment {
 
 /** Virtual node is document type with nodeName which matched to string */
 export function match_doctype(node: DomNode, dt: DomDocTypeSpec): node is DomDocType {
-    return is_doctype(node) && node.$spec.$name == dt.$name && node.$spec.$pub_id == dt.$pub_id && node.$spec.$sys_id == dt.$sys_id;
+    return is_doctype(node) && node.$name == dt.$name && node.$pub_id == dt.$pub_id && node.$sys_id == dt.$sys_id;
 }
 
 /** Parse element selector from string */

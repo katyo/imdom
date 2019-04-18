@@ -41,11 +41,9 @@ function parse_node(node: Node): DomNode {
             // parse DOM document type node
             $flags: DomFlags.DocType,
             $node: node as DocumentType,
-            $spec: {
-                $name: (node as DocumentType).name,
-                $pub_id: (node as DocumentType).publicId,
-                $sys_id: (node as DocumentType).systemId,
-            },
+            $name: (node as DocumentType).name,
+            $pub_id: (node as DocumentType).publicId,
+            $sys_id: (node as DocumentType).systemId,
         } as DomDocType : {
             // parse DOM text or comment nodes
             $flags: nodeType == NodeType.Text ? DomFlags.Text : DomFlags.Comment, // set virtual node type to text

@@ -34,10 +34,10 @@ function format_node(out: string, node: DomNode): string {
                `<!--${escape_text(node.$text)}-->`);
 }
 
-function format_doctype(out: string, {$spec}: DomDocType): string {
-    out += `<!DOCTYPE ${$spec.$name}`;
-    if ($spec.$pub_id) {
-        out += ` PUBLIC "${escape_attr($spec.$pub_id)}" "${escape_attr($spec.$sys_id)}">`;
+function format_doctype(out: string, node: DomDocType): string {
+    out += `<!DOCTYPE ${node.$name}`;
+    if (node.$pub_id) {
+        out += ` PUBLIC "${escape_attr(node.$pub_id)}" "${escape_attr(node.$sys_id)}">`;
     } else {
         out += `>`;
     }
