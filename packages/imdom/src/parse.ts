@@ -2,8 +2,8 @@
  * @module parse
  */
 
-import { DomFlags, DomAttrs, DomStyles, DomNode, DomNodes, DomElement, DomDocType, DomFragment } from './types';
-import { NodeType, EMPTY_STRING, node_selector } from './utils';
+import { DomFlags, DomNameSpace, DomAttrs, DomStyles, DomNode, DomNodes, DomElement, DomDocType, DomFragment } from './types';
+import { NodeType, EMPTY_STRING, parse_ns_uri, get_attr_str, parse_classes } from './utils';
 
 /** Parse DOM element into virtual DOM element */
 export function parse(node: Element): DomElement;
@@ -21,9 +21,13 @@ function parse_element(node: Element): DomElement {
     return { // parse DOM element
         $flags: DomFlags.Element, // set virtual node type to element (initially virtual element is detached)
         $node: node, // set DOM element node
-        $sel: node_selector(node as Element), // set selector
+        $ns: parse_ns_uri(node.namespaceURI) as DomNameSpace, // name space
+        $tag: node.tagName.toLowerCase(), // tag name
+        $id: get_attr_str(node, 'id'), // identifier
+        $class: parse_classes(get_attr_str(node, 'class')), // classes
+        $key: get_attr_str(node, 'data-key'), // key
         $attrs: parse_attrs((node as Element).attributes), // initially all attributes treated as mutable
-        $class: {}, // initially all classes sits in selector
+        $classes: {}, // initially all classes sits in selector
         $style: parse_style((node as Element).getAttribute('style')), // initially all styles treated as mutable
         $nodes: parse_children(node.childNodes) // parse children nodes
     };

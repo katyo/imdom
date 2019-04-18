@@ -101,12 +101,11 @@ export interface Selector {
 
 /** Check when virtual element matched to selector */
 function same_element(elm: DomElement, sel: Selector): boolean {
-    const {$sel} = elm;
-    return $sel.$ns == sel.$ns && // namespace is same
-        $sel.$tag == sel.$tag && // tag name is same
-        $sel.$id == sel.$id && // identifier is same
-        (!sel.$class || $sel.$class && has_classes(sel.$class, $sel.$class)) && // has same classes
-        sel.$key == $sel.$key || // key is same
+    return elm.$ns == sel.$ns && // namespace is same
+        elm.$tag == sel.$tag && // tag name is same
+        elm.$id == sel.$id && // identifier is same
+        (!sel.$class || elm.$class && has_classes(sel.$class, elm.$class)) && // has same classes
+        sel.$key == elm.$key || // key is same
         false; // not same
 }
 
@@ -183,21 +182,6 @@ function has_classes(req: string[], all: DomClassSet): boolean {
         }
     }
     return true;
-}
-
-/** Get selector from DOM element */
-export function node_selector(elm: Element): DomSelector {
-    return {
-        // full selector
-        /*s: tag
-            + (id ? '#' + id : '')
-            + (cls ? build_classes(cls, '.') : ''),*/
-        $ns: parse_ns_uri(elm.namespaceURI) as DomNameSpace, // name space
-        $tag: elm.tagName.toLowerCase(), // tag name
-        $id: get_attr_str(elm, 'id'), // identifier
-        $class: parse_classes(get_attr(elm, 'class') as string), // classes
-        $key: get_attr_str(elm, 'data-key'), // key
-    };
 }
 
 /** Check attribute of DOM element */

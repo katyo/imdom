@@ -68,17 +68,16 @@ const void_tag = /^(?:area|b(?:ase|r)|col|embed|hr|i(?:mg|nput)|keygen|link|meta
 const code_tag = /^(?:s(?:cript|tyle))$/;
 
 function format_element(out: string, elm: DomElement): string {
-    const sel = elm.$sel;
-    const tag = sel.$tag;
+    const { $tag } = elm;
 
-    out += `<${tag}`;
+    out += `<${$tag}`;
 
-    if (sel.$id) {
-        out += ` id="${escape_attr(sel.$id)}"`;
+    if (elm.$id) {
+        out += ` id="${escape_attr(elm.$id)}"`;
     }
-    out = format_classes(out, sel.$class, elm.$class);
-    if (sel.$key) {
-        out += ` data-key="${format_attr(sel.$key)}"`;
+    out = format_classes(out, elm.$class, elm.$classes);
+    if (elm.$key) {
+        out += ` data-key="${format_attr(elm.$key)}"`;
     }
     out = format_attrs(out, elm.$attrs);
     out = format_styles(out, elm.$style);
@@ -86,7 +85,7 @@ function format_element(out: string, elm: DomElement): string {
     const {$nodes} = elm;
     if ($nodes.length) {
         out += '>';
-        if (code_tag.test(tag)) {
+        if (code_tag.test($tag)) {
             for (let i = 0; i < $nodes.length; ) {
                 const node = $nodes[i++];
                 if (is_text(node)) {
@@ -96,9 +95,9 @@ function format_element(out: string, elm: DomElement): string {
         } else {
             out = format_children(out, $nodes);
         }
-        out += `</${tag}>`;
+        out += `</${$tag}>`;
     } else {
-        out += void_tag.test(tag) ? '>' : `></${tag}>`;
+        out += void_tag.test($tag) ? '>' : `></${$tag}>`;
     }
 
     return out;

@@ -5,6 +5,10 @@ function mksel($ns: DomNameSpace, $tag: string, $id?: string, $class?: DomClassS
     return { $ns, $tag, $id, $class, $key };
 }
 
+function selof({ $ns, $tag, $id, $class, $key }: DomElement): DomSelector {
+    return { $ns, $tag, $id, $class, $key };
+}
+
 function mkval<T>($value: T, $txnid: DomTxnId = 0) {
     return { $value, $txnid };
 }
@@ -20,10 +24,10 @@ describe('parse', () => {
             se(vdom.$nodes.length, 0);
 
             se(vdom.$node, elm);
-            dse(vdom.$sel, mksel(DomNameSpace.XHTML, 'div'));
+            dse(selof(vdom), mksel(DomNameSpace.XHTML, 'div'));
             dse(vdom.$attrs, {});
             dse(vdom.$style, {});
-            dse(vdom.$class, {});
+            dse(vdom.$classes, {});
             dse(vdom.$nodes, []);
         });
 
@@ -40,13 +44,13 @@ describe('parse', () => {
 
             se(n1.$node, elm.firstChild);
             se(n2.$node, elm.lastChild);
-            dse(n1.$sel, mksel(DomNameSpace.XHTML, 'span'));
-            dse(n2.$sel, mksel(DomNameSpace.XHTML, 'p'));
+            dse(selof(n1), mksel(DomNameSpace.XHTML, 'span'));
+            dse(selof(n2), mksel(DomNameSpace.XHTML, 'p'));
             se(n1.$flags, DomFlags.Element);
             se(n2.$flags, DomFlags.Element);
             dse(n1.$attrs, {});
             dse(n1.$style, {});
-            dse(n1.$class, {});
+            dse(n1.$classes, {});
             dse(n1.$nodes, []);
             dse(n2.$nodes, []);
         });
@@ -84,15 +88,15 @@ describe('parse', () => {
             se(n1.$node, elm.children[2]);
             se(n2.$node, elm.children[3]);
             se(n3.$node, elm.children[4]);
-            dse(n1.$sel, mksel(DomNameSpace.XHTML, 'p'));
-            dse(n2.$sel, mksel(DomNameSpace.XHTML, 'img'));
-            dse(n3.$sel, mksel(DomNameSpace.XHTML, 'blockquote'));
+            dse(selof(n1), mksel(DomNameSpace.XHTML, 'p'));
+            dse(selof(n2), mksel(DomNameSpace.XHTML, 'img'));
+            dse(selof(n3), mksel(DomNameSpace.XHTML, 'blockquote'));
             se(n1.$flags, DomFlags.Element);
             se(n2.$flags, DomFlags.Element);
             se(n3.$flags, DomFlags.Element);
             dse(n1.$attrs, {});
             dse(n1.$style, {});
-            dse(n1.$class, {});
+            dse(n1.$classes, {});
             dse(n1.$nodes, []);
             dse(n2.$nodes, []);
             dse(n3.$nodes, []);
@@ -109,10 +113,10 @@ describe('parse', () => {
         const n3 = vdom.$nodes[2] as DomElement;
         const n4 = vdom.$nodes[3] as DomElement;
 
-        it('with id', () => { dse(n1.$sel, mksel(DomNameSpace.XHTML, 'span', 'unique')); });
-        it('with class', () => { dse(n2.$sel, mksel(DomNameSpace.XHTML, 'p', _, {paragraph: true})); });
-        it('with two classes', () => { dse(n3.$sel, mksel(DomNameSpace.XHTML, 'a', _, {menu: true, active: true})); });
-        it('with id, class and key', () => { dse(n4.$sel, mksel(DomNameSpace.XHTML, 'div', 'page', {main: true}, 'some')); });
+        it('with id', () => { dse(selof(n1), mksel(DomNameSpace.XHTML, 'span', 'unique')); });
+        it('with class', () => { dse(selof(n2), mksel(DomNameSpace.XHTML, 'p', _, {paragraph: true})); });
+        it('with two classes', () => { dse(selof(n3), mksel(DomNameSpace.XHTML, 'a', _, {menu: true, active: true})); });
+        it('with id, class and key', () => { dse(selof(n4), mksel(DomNameSpace.XHTML, 'div', 'page', {main: true}, 'some')); });
     });
 
     describe('attributes', () => {

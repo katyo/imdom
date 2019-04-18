@@ -64,13 +64,11 @@ export interface DomDocTypeSpec {
 }
 
 /** Single element node */
-export interface DomElement extends DomBase<Element> {
-    /** Element selector */
-    $sel: DomSelector;
+export interface DomElement extends DomBase<Element>, DomSelector {
     /** Mutable attributes */
     $attrs: DomAttrs;
     /** Classes */
-    $class: DomClasses;
+    $classes: DomClasses;
     /** Styles */
     $style: DomStyles;
     /** Children nodes */
@@ -85,14 +83,6 @@ export interface DomFragment extends DomBase<Element> {
 
 /** Element selector */
 export interface DomSelector {
-    /**
-       Full element selector
-
-       Include: tag name, identifier, selector classes.
-       Exclude: key
-    */
-    //s: string;
-
     /**
        Element name space
     */

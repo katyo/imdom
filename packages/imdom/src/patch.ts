@@ -16,9 +16,9 @@ interface State {
     // reconciler
     $reconciler: Reconciler<DomNode>,
     // current key
-    // fragment capturing stack
-    //f:
     $key: DomKey | undefined,
+    // current fragment(s)
+    $fragment: DomFragment[] | undefined,
 }
 
 // patching stack
@@ -210,15 +210,13 @@ const create_element: (sel: Selector) => DomElement =
         return { // create new virtual node
             $node: node,
             $flags: DomFlags.Element,
-            $sel: {
-                $tag: sel.$tag,
-                $ns: sel.$ns,
-                $id: sel.$id,
-                $class: class_set,
-                $key: sel.$key,
-            },
+            $tag: sel.$tag,
+            $ns: sel.$ns,
+            $id: sel.$id,
+            $class: class_set,
+            $key: sel.$key,
             $attrs: {},
-            $class: {},
+            $classes: {},
             $style: {},
             $nodes: []
         };
@@ -236,15 +234,13 @@ const create_element: (sel: Selector) => DomElement =
         return { // create new virtual node
             $node: NULL as unknown as Element,
             $flags: DomFlags.Element,
-            $sel: {
-                $tag: sel.$tag,
-                $ns: sel.$ns,
-                $id: sel.$id,
-                $class: class_set,
-                $key: sel.$key,
-            },
+            $tag: sel.$tag,
+            $ns: sel.$ns,
+            $id: sel.$id,
+            $class: class_set,
+            $key: sel.$key,
             $attrs: {},
-            $class: {},
+            $classes: {},
             $style: {},
             $nodes: []
         };
@@ -290,8 +286,8 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
         $ns: name == 'svg' ? // when tag is 'svg'
             DomNameSpace.SVG : // set SVG namespace
             is_element(state.$node as DomNode) // when we have parent element
-            && (state.$node as DomElement).$sel.$tag != 'foreignObject' ? // which is not a foreign object
-            (state.$node as DomElement).$sel.$ns : // set namespace from parent
+            && (state.$node as DomElement).$tag != 'foreignObject' ? // which is not a foreign object
+            (state.$node as DomElement).$ns : // set namespace from parent
             DomNameSpace.XHTML, // set XHTML namespace by default
         $id: id, // set element id
         $class: !class1 ? NULL : // set element classes
@@ -312,7 +308,7 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
     if (!elm) { // when virtual element missing
         push_node(state.$reconciler, elm = create_element(sel)); // create new virtual node
     } else if (!is_attached(elm) && sel.$class) { // when element is exists but not attached
-        const cls = elm.$sel.$class; // get classes from element selector
+        const cls = elm.$class; // get classes from element selector
 
         if (cls) { // when element has classes in selector
             const {$class} = sel;
@@ -323,7 +319,7 @@ export function tag(name: string, id?: string, class1?: string, class2?: string,
             // move all classes which missing in selector to mutable class set
             for (const name in cls) { // iterate over classes in element selector
                 if (!cls[name]) { // class not used in current selector
-                    elm.$class[name] = txnid; // add class to element mutable class set
+                    elm.$classes[name] = txnid; // add class to element mutable class set
                 }
             }
         }
@@ -343,12 +339,12 @@ export const end: () => void =
 
         if (elm.$flags & DomFlags.Element) { // when current subject is element
             const node = elm.$node as HTMLElement; // get associated DOM element
-            const { $attrs, $class, $style } = elm;
+            const { $attrs, $classes, $style } = elm;
 
             // remove outdated classes
-            for (const name in $class) {
-                if ($class[name] && $class[name]! < txnid) { // when class is not added in current transaction
-                    $class[name] = NULL; // remove class entry from virtual element
+            for (const name in $classes) {
+                if ($classes[name] && $classes[name]! < txnid) { // when class is not added in current transaction
+                    $classes[name] = NULL; // remove class entry from virtual element
                     dom.remove_class(node, name); // remove class from DOM element
                 }
             }
@@ -376,12 +372,12 @@ export const end: () => void =
         const elm = state.$node as DomElement; // get current element from state
 
         if (elm.$flags & DomFlags.Element) { // when current subject is element
-            const { $attrs, $class, $style } = elm;
+            const { $attrs, $classes, $style } = elm;
 
             // remove outdated classes
-            for (const name in $class) {
-                if ($class[name] && $class[name]! < txnid) { // when class is not added in current transaction
-                    $class[name] = NULL; // remove class entry from virtual element
+            for (const name in $classes) {
+                if ($classes[name] && $classes[name]! < txnid) { // when class is not added in current transaction
+                    $classes[name] = NULL; // remove class entry from virtual element
                 }
             }
 
@@ -496,17 +492,17 @@ export const attr: DomAttrFn =
 export const class_: (name: string) => void =
     BROWSER ? (name) => {
         const elm = state.$node as DomElement; // get current element from state
-        const cls = elm.$class; // get mutable class set of element
+        const { $classes } = elm; // get mutable class set of element
 
-        if (!cls[name]) { // when class is missing
+        if (!$classes[name]) { // when class is missing
             dom.add_class(elm.$node, name); // add class to DOM element classes
         }
 
         // update txn id to prevent removing class from DOM element
-        cls[name] = txnid;
+        $classes[name] = txnid;
     } : (name) => {
         // update txn id to prevent removing class from DOM element
-        (state.$node as DomElement).$class[name] = txnid;
+        (state.$node as DomElement).$classes[name] = txnid;
     };
 
 /** Set immutable style */
@@ -585,16 +581,69 @@ export function patch(fragment: DomFragment) {
 /**
  *  Start fragment capturing
  */
-/*export function start() {
+export function start() {
+    const frag: DomFragment = {
+        $flags: DomFlags.Empty,
+        $node: state.$node.$node,
+        $nodes: [],
+    };
 
-}*/
+    if (!state.$fragment) {
+        state.$fragment = [frag];
+    } else {
+        state.$fragment.push(frag);
+    }
+}
 
 /**
  * Finalize fragment capturing and return fragment
  */
-/*export function stop(): DomFragment {
+export function stop(): DomFragment {
+    if (DEBUG) {
+        assert(state.$fragment, "Attempt to end fragment which is not started");
+    }
 
-}*/
+    if ((state.$fragment as DomFragment[]).length > 1) {
+        return (state.$fragment as DomFragment[]).pop() as DomFragment;
+    }
+
+    const frag = (state.$fragment as DomFragment[])[0];
+
+    state.$fragment = NULL;
+
+    return frag;
+}
+
+function capture_node(node: DomNode) {
+    if (state.$fragment) {
+        for (let i = 0; i < state.$fragment.length; i++) {
+            state.$fragment[i].$nodes.push(node);
+        }
+    }
+}
+
+/**
+ * Reuse captured fragment
+ */
+export function reuse(frag: DomFragment) {
+    if (DEBUG) {
+        assert(frag.$node !== state.$node.$node, "Attempt to reuse fragment which parent is different");
+    }
+
+    for (let i = 0; i < frag.$nodes.length; i++) {
+        const node = frag.$nodes[i];
+
+        if (BENCH_REUSE) bench_start(reuse1_stats!);
+
+        const elm = reuse_node(state.$reconciler, match_node, node, true);
+
+        if (DEBUG) {
+            assert(elm, "Unable to reuse fragment bacause fragment node not exists");
+        }
+
+        if (BENCH_REUSE) bench_stop(reuse1_stats!);
+    }
+}
 
 let stats_timer: any;
 
