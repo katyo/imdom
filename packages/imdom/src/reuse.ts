@@ -53,29 +53,29 @@ import { NULL, trace } from './utils';
 /** Reconciliation state */
 export interface Reconciler<T> {
     /** First source segment */
-    s: SegmentRef<T>;
+    $first_src: SegmentRef<T>;
     /** First destination segment */
-    a: SegmentRef<T>;
+    $first_dst: SegmentRef<T>;
     /** Last destination segment */
-    b: SegmentRef<T>;
+    $last_dst: SegmentRef<T>;
     /** Current reusing segment */
-    c: SegmentRef<T>;
+    $current: SegmentRef<T>;
 }
 
 /** Reconciliation segment */
 export interface Segment<T> {
     /** Segment kind */
-    t: Op,
+    $op: Op,
     /** Next source segment */
-    n: SegmentRef<T>;
+    $next_src: SegmentRef<T>;
     /** Previous source segment */
-    p: SegmentRef<T>;
+    $prev_src: SegmentRef<T>;
     /** Next destination segment */
-    a: SegmentRef<T>;
+    $next_dst: SegmentRef<T>;
     /** Previous destination segment */
-    b: SegmentRef<T>;
+    $prev_dst: SegmentRef<T>;
     /** Associated nodes */
-    _: T[];
+    $nodes: T[];
 }
 
 /** Reconciliation segment operation
@@ -96,28 +96,28 @@ export type SegmentRef<T> = Segment<T> | undefined;
 
 /** Segment contains nodes which should be inserted */
 function is_insert<T>(segment: Segment<T>): boolean {
-    return segment.t == Op.Insert;
+    return segment.$op == Op.Insert;
 }
 
 /** Segment contains nodes which should be reused */
 function is_update<T>(segment: Segment<T>): boolean {
-    return segment.t == Op.Update;
+    return segment.$op == Op.Update;
 }
 
 /** Segment contains nodes which should be removed */
 function is_remove<T>(segment: Segment<T>): boolean {
-    return segment.t == Op.Remove;
+    return segment.$op == Op.Remove;
 }
 
 /** Wrap nodes to segment */
-function to_segment<T>(nodes: T[], op: Op): Segment<T> {
+function to_segment<T>($nodes: T[], $op: Op): Segment<T> {
     return { // create new segment
-        t: op, // set segment operation
-        n: NULL, // clear reference to next source segment
-        p: NULL, // clear reference to previous source segment
-        a: NULL, // clear reference to next destination segment
-        b: NULL, // clear reference to previous destination segment
-        _: nodes, // set list of segment nodes
+        $op, // set segment operation
+        $next_src: NULL, // clear reference to next source segment
+        $prev_src: NULL, // clear reference to previous source segment
+        $next_dst: NULL, // clear reference to next destination segment
+        $prev_dst: NULL, // clear reference to previous destination segment
+        $nodes, // set list of segment nodes
     };
 }
 
@@ -128,10 +128,10 @@ export function use_nodes<T>(nodes: T[]): Reconciler<T> {
         Op.Remove, // mark segment to remove
     );
     return {
-        s: first, // set first source segment
-        a: NULL, // clear reference to first destination segment
-        b: NULL, // clear reference to last destination segment
-        c: first, // use first source segment as current
+        $first_src: first, // set first source segment
+        $first_dst: NULL, // clear reference to first destination segment
+        $last_dst: NULL, // clear reference to last destination segment
+        $current: first, // use first source segment as current
     };
 }
 
@@ -146,14 +146,14 @@ export function use_nodes<T>(nodes: T[]): Reconciler<T> {
 */
 function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
     const {
-        b, // last destination segment
+        $last_dst, // last destination segment
     } = state;
 
     if (TRACE_REUSE) trace('split segment', c, i);
 
     const {
-        _, // segment nodes
-        _: {
+        $nodes, // segment nodes
+        $nodes: {
             length: l // number of segment nodes
         }
     } = c;
@@ -163,28 +163,28 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
     if (i) { // when node isn't first
         if (i == l - 1) { // when node is last
             append_src(state, d = to_segment( // create new segment for reused node
-                [_.pop()!], // set last node only
+                [$nodes.pop()!], // set last node only
                 Op.Update, // mark as reused
             ), c); // append segment to current
         } else { // when node isn't last
-            c._ = _.slice(0, i); // set current nodes before reused only
+            c.$nodes = $nodes.slice(0, i); // set current nodes before reused only
 
             append_src(state, d = to_segment( // create new segment for reused node
-                _.slice(i, i + 1), // put reused node only
+                $nodes.slice(i, i + 1), // put reused node only
                 Op.Update, // mark as reused
             ), c); // append segment to current
 
             append_src(state, to_segment( // create new segment for removed nodes after reused node
-                _.slice(i + 1), // put nodes after reused node only
+                $nodes.slice(i + 1), // put nodes after reused node only
                 Op.Remove, // mark as removed
             ), d); // append end segment to new
         }
     } else { // when node is first
-        if (b // when has last destination segment
-            && is_update(b) // and which is reusing
-            && b.n == c // and next source is current segment
+        if ($last_dst // when has last destination segment
+            && is_update($last_dst) // and which is reusing
+            && $last_dst.$next_src == c // and next source is current segment
            ) {
-            b._.push(_.shift()!); // simply move node to previous destination segment
+            $last_dst.$nodes.push($nodes.shift()!); // simply move node to previous destination segment
 
             if (l < 2) { // when only one node in segment
                 remove_src(state, c); // remove current segment
@@ -192,11 +192,11 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
         } else { // when at first segment
             if (l > 1) { // when more than one node in segment
                 prepend_src(state, d = to_segment( // create new segment for reused node
-                    [_.shift()!], // put first node only
+                    [$nodes.shift()!], // put first node only
                     Op.Update, // mark as reused
                 ), c);
             } else { // when only one node in segment
-                c.t = Op.Update; // mark as reused
+                c.$op = Op.Update; // mark as reused
                 d = c; // reuse segment
             }
         }
@@ -209,7 +209,7 @@ function split_segment<T>(state: Reconciler<T>, c: Segment<T>, i: number) {
 
 /** Try to reuse node */
 export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) => boolean | undefined, ctx: X, next: boolean): T | void {
-    let c: SegmentRef<T> = state.c; // start from current or first segment
+    let c: SegmentRef<T> = state.$current; // start from current or first segment
     let e: SegmentRef<T>; // end at none segment
     let i: number; // node index
     let n: T | undefined;
@@ -217,26 +217,26 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
     if (TRACE_REUSE) trace('reuse node', ctx, next);
 
     for (; c; ) {
-        for (; c != e; c = c!.n) { // iterate over source segments
+        for (; c != e; c = c!.$next_src) { // iterate over source segments
             if (is_remove(c!)) { // when segment is to remove
-                for (i = 0; i < c!._.length; i++) { // iterate over nodes of segment
-                    n = c!._[i]; // get current node
+                for (i = 0; i < c!.$nodes.length; i++) { // iterate over nodes of segment
+                    n = c!.$nodes[i]; // get current node
                     if (match(n, ctx)) { // when node is matched
                         split_segment(state, c!, i); // we intend to split segment
 
-                        c = state.b!.n; // set current segment to next of last destination
+                        c = state.$last_dst!.$next_src; // set current segment to next of last destination
                         if (c) { // when we have the next segment of last destination
                             e = c; // use it as end for second seeking loop
                             // run first seeking loop
-                            for (; c && !is_remove(c!); c = c!.n); // find next removing segment
+                            for (; c && !is_remove(c!); c = c!.$next_src); // find next removing segment
                         } else {
                             e = NULL; // use none segment as end for second seeking loop
                         }
                         if (!c) { // when we haven't the next segment of last destination or first seeking loop failed
                             // run second seeking loop
-                            for (c = state.s; c != e && !is_remove(c!); c = c!.n); // find next removing segment
+                            for (c = state.$first_src; c != e && !is_remove(c!); c = c!.$next_src); // find next removing segment
                         }
-                        state.c = c; // set current segment to next removing
+                        state.$current = c; // set current segment to next removing
                         return n; // return reused node
                     } else if (!next) { // when node isn't matched and no need to search next
                         return;
@@ -245,28 +245,28 @@ export function reuse_node<T, X>(state: Reconciler<T>, match: (node: T, ctx: X) 
             }
         }
 
-        if (state.c == state.s || e) { // when current reusing segment is first or second iteration
+        if (state.$current == state.$first_src || e) { // when current reusing segment is first or second iteration
             break; // break iteration
         }
 
         // iterate over source segments before current
-        c = state.s; // start from first segment
-        e = state.c; // use current segment as end
+        c = state.$first_src; // start from first segment
+        e = state.$current; // use current segment as end
     }
 }
 
 /** Insert new node */
 export function push_node<T>(state: Reconciler<T>, node: T) {
     let {
-        b: last, // last destination segment
+        $last_dst, // last destination segment
     } = state;
 
     if (TRACE_REUSE) trace('push node', node);
 
-    if (last // we have last destination segment
-        && is_insert(last)) { // and it is marked to insert
+    if ($last_dst // we have last destination segment
+        && is_insert($last_dst)) { // and it is marked to insert
 
-        last._.push(node); // append node to last destination segment nodes
+        $last_dst.$nodes.push(node); // append node to last destination segment nodes
     } else {
         append_dst(state, to_segment( // create new destination segment
             [node], // put inserted node to segment nodes
@@ -282,27 +282,27 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
         const nodes: T[] = [];
         let seg: Segment<T> | undefined;
         const src = [];
-        for (seg = state.s; seg; seg = seg.n) {
-            for (let i = 0; i < seg._.length; i++) {
-                const node = seg._[i];
+        for (seg = state.$first_src; seg; seg = seg.$next_src) {
+            for (let i = 0; i < seg.$nodes.length; i++) {
+                const node = seg.$nodes[i];
                 let index = nodes.indexOf(node);
                 if (index < 0) {
                     index = nodes.length;
                     nodes.push(node);
                 }
-                src.push((seg.t == Op.Remove ? '-' : '') + index);
+                src.push((seg.$op == Op.Remove ? '-' : '') + index);
             }
         }
         const dst = [];
-        for (seg = state.a; seg; seg = seg.a) {
-            for (let i = 0; i < seg._.length; i++) {
-                const node = seg._[i];
+        for (seg = state.$first_dst; seg; seg = seg.$next_dst) {
+            for (let i = 0; i < seg.$nodes.length; i++) {
+                const node = seg.$nodes[i];
                 let index = nodes.indexOf(node);
                 if (index < 0) {
                     index = nodes.length;
                     nodes.push(node);
                 }
-                dst.push((seg.t == Op.Insert ? '+' : '') + index);
+                dst.push((seg.$op == Op.Insert ? '+' : '') + index);
             }
         }
         trace('reconcile', src.join(' '), '=>', dst.join(' '));
@@ -314,66 +314,66 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
     let n: number; // number of destination nodes to insert
     let l: number; // number of overlapped nodes
 
-    let c: SegmentRef<T> = state.a; // current destination segment
+    let c: SegmentRef<T> = state.$first_dst; // current destination segment
     let h: SegmentRef<T>; // current easiest source segment
 
-    for (; c; c = c.a) { // iterate over destination segments
+    for (; c; c = c.$next_dst) { // iterate over destination segments
         if (is_update(c) // when segment is reused
-            && (!h || c._.length > h._.length) // and weight greater than previous
+            && (!h || c.$nodes.length > h.$nodes.length) // and weight greater than previous
            ) {
             h = c; // set current segment as heaviest
         }
     }
 
     if (h) { // when heaviest reused segment found
-        const h_ = h._;
+        const h_nodes = h.$nodes;
 
         for (;;) {
             const {
-                b, // previous destination segment
-                a, // next destination segment
+                $prev_dst, // previous destination segment
+                $next_dst, // next destination segment
             } = h;
 
-            const s = b && a ? // when we have previous and next destination segments
-                (b._.length < a._.length ? b : a) : // select easiest segment to merge
-                b ? b : a; // when we have previous destination segment
+            const s = $prev_dst && $next_dst ? // when we have previous and next destination segments
+                ($prev_dst.$nodes.length < $next_dst.$nodes.length ? $prev_dst : $next_dst) : // select easiest segment to merge
+                $prev_dst ? $prev_dst : $next_dst; // when we have previous destination segment
 
             if (!s) break; // nothing to merge, break loop
 
-            const s_ = s._; // segment nodes
-            const p = s == b; // when segment is before heaviest destination segment
+            const s_nodes = s.$nodes; // segment nodes
+            const p = s == $prev_dst; // when segment is before heaviest destination segment
             const u = is_update(s); // segment is for update
 
             i = 0; // initialize index of node
-            n = s_.length; // number of nodes to insert
+            n = s_nodes.length; // number of nodes to insert
             l = 0; // no overlapped nodes
 
-            if (!(u && (p ? h.p == s : h.n == s))) { // when segment doesn't already merged by previous operations
-                const o = p ? h.p : h.n; // get source segment
+            if (!(u && (p ? h.$prev_src == s : h.$next_src == s))) { // when segment doesn't already merged by previous operations
+                const o = p ? h.$prev_src : h.$next_src; // get source segment
 
                 if (o && is_remove(o)) { // when source segment marked to remove
-                    let o_ = o._; // get nodes to remove
+                    let o_nodes = o.$nodes; // get nodes to remove
 
-                    if (u && p ? o.p == s : o.n == s) { // when reused nodes previous or next of removed
-                        for (i = 0; i < o_.length; i++) { // iterate over nodes to remove
-                            remove(o_[i], ctx); // remove segment node
+                    if (u && p ? o.$prev_src == s : o.$next_src == s) { // when reused nodes previous or next of removed
+                        for (i = 0; i < o_nodes.length; i++) { // iterate over nodes to remove
+                            remove(o_nodes[i], ctx); // remove segment node
                         }
 
                         remove_src(state, o); // remove empty segment
                         n = 0; // we doesn't need insert nodes now
                     } else {
                         // we intend to replace overlapped nodes
-                        d = o._.length; // number of nodes to remove
+                        d = o.$nodes.length; // number of nodes to remove
                         l = Math.min(d, n); // number of overlapped nodes
 
                         if (d > l) { // when we have extra nodes to remove
                             if (p) { // when merged segment before heaviest segment
                                 // cut nodes from tail
-                                o._ = o_.slice(0, j = d - l);
-                                o_ = o_.slice(j);
+                                o.$nodes = o_nodes.slice(0, j = d - l);
+                                o_nodes = o_nodes.slice(j);
                             } else { // when merged segment after heaviest segment
                                 // cut nodes from head
-                                o._ = o_.slice(l);
+                                o.$nodes = o_nodes.slice(l);
                                 //o_ = o_.slice(0, l); // <-- no effect
                             }
                         } else {
@@ -381,7 +381,7 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                         }
 
                         for (; i < l; i++) { // iterate over overlapped nodes
-                            replace(s_[i], o_[i], ctx); // replace overlapped node
+                            replace(s_nodes[i], o_nodes[i], ctx); // replace overlapped node
                         }
                     }
                 }
@@ -389,18 +389,18 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
                 if (n > l) { // when we have extra nodes to insert
                     // reference node to insert before
                     const r = p ? // when merged segment before heaviest segment
-                        h_[0] : // insert extra nodes before first node of heaviest segment
+                        h_nodes[0] : // insert extra nodes before first node of heaviest segment
                         // when merged segment after heaviest segment
-                        h.n ? // when we have next segment
-                        h.n._[0] : // insert extra nodes before first node of segment after heaviest
+                        h.$next_src ? // when we have next segment
+                        h.$next_src.$nodes[0] : // insert extra nodes before first node of segment after heaviest
                         ( // when we haven't next segment
-                            append(s_[--n]!, o && l ? o._[l - 1] : h_[h_.length - 1], ctx), // append last inserting node
+                            append(s_nodes[--n]!, o && l ? o.$nodes[l - 1] : h_nodes[h_nodes.length - 1], ctx), // append last inserting node
                             // exclude appended node from insertion
-                            s_[n]! // use last node as reference for prepending
+                            s_nodes[n]! // use last node as reference for prepending
                         );
 
                     for (; i < n; i++) { // iterate over extra nodes to insert
-                        prepend(s_[i], r, ctx); // insert extra node before reference
+                        prepend(s_nodes[i], r, ctx); // insert extra node before reference
                     }
                 }
             }
@@ -410,14 +410,14 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
             }
             remove_dst(state, s); // remove merged destination segment
 
-            h_.splice(p ? 0 : h_.length, 0, ...s_); // merge nodes of segments
+            h_nodes.splice(p ? 0 : h_nodes.length, 0, ...s_nodes); // merge nodes of segments
         }
 
         // remove nodes from source segments which marked to remove
-        for (c = state.s; c; c = c.n) {
+        for (c = state.$first_src; c; c = c.$next_src) {
             if (is_remove(c)) { // when segment is marked to remove
-                for (i = 0; i < c._.length; i++) { // iterate over nodes to remove
-                    remove(c._[i], ctx);
+                for (i = 0; i < c.$nodes.length; i++) { // iterate over nodes to remove
+                    remove(c.$nodes[i], ctx);
                 }
             }
         }
@@ -425,92 +425,92 @@ export function reconcile<T, X>(state: Reconciler<T>, replace: (node: T, rep: T,
         // we have enough simply replace old nodes by newly inserted
 
         const {
-            s, // first source segment
-            a, // first destination segment
+            $first_src, // first source segment
+            $first_dst, // first destination segment
         } = state;
 
-        d = s ? s._.length : 0; // number of source nodes to remove
-        n = a ? a._.length : 0; // number of destination nodes to append
+        d = $first_src ? $first_src.$nodes.length : 0; // number of source nodes to remove
+        n = $first_dst ? $first_dst.$nodes.length : 0; // number of destination nodes to append
         l = Math.min(d, n); // number of overlapped nodes
 
         for (i = 0; i < l; i++) { // iterate over overlapped nodes
-            replace(a!._[i], s!._[i], ctx); // replace overlapped node
+            replace($first_dst!.$nodes[i], $first_src!.$nodes[i], ctx); // replace overlapped node
         }
 
         if (d > l) { // when we have extra source nodes to remove
             for (; i < d; i++) { // iterate over extra source nodes
-                remove(s!._[i], ctx); // remove extra node
+                remove($first_src!.$nodes[i], ctx); // remove extra node
             }
         } else if (n > l) { // when we have extra destination nodes to append
-            append(a!._[--n], a!._[i - 1], ctx); // append last node to end
+            append($first_dst!.$nodes[--n], $first_dst!.$nodes[i - 1], ctx); // append last node to end
 
             for (; i < n; i++) { // iterate over extra destination nodes
-                prepend(a!._[i], a!._[n], ctx); // prepend extra node
+                prepend($first_dst!.$nodes[i], $first_dst!.$nodes[n], ctx); // prepend extra node
             }
         }
     }
 
-    return state.a ? state.a._ : [];
+    return state.$first_dst ? state.$first_dst.$nodes : [];
 }
 
 /** Insert new source segment before reference */
 function prepend_src<T>(root: Reconciler<T>, item: Segment<T>, ref: Segment<T>) {
-    if (ref.p) { // when reference segment has previous
-        item.p = ref.p; // set previous of current to previous of reference
-        ref.p.n = item; // set next of previous to current
+    if (ref.$prev_src) { // when reference segment has previous
+        item.$prev_src = ref.$prev_src; // set previous of current to previous of reference
+        ref.$prev_src.$next_src = item; // set next of previous to current
     } else { // when reference segment is first
-        root.s = item; // set first to current
+        root.$first_src = item; // set first to current
     }
-    ref.p = item; // set previous of reference to current
-    item.n = ref; // set next of current to reference
+    ref.$prev_src = item; // set previous of reference to current
+    item.$next_src = ref; // set next of current to reference
 }
 
 /** Insert new source segment after reference */
 function append_src<T>(_root: Reconciler<T>, item: Segment<T>, ref: Segment<T>) {
-    if (ref.n) { // when reference segment has next
-        ref.n.p = item; // set previous of next to current
-        item.n = ref.n; // set next of current to next of reference
+    if (ref.$next_src) { // when reference segment has next
+        ref.$next_src.$prev_src = item; // set previous of next to current
+        item.$next_src = ref.$next_src; // set next of current to next of reference
     }
-    item.p = ref; // set previous of current to reference
-    ref.n = item; // set next of reference to current
+    item.$prev_src = ref; // set previous of current to reference
+    ref.$next_src = item; // set next of reference to current
 }
 
 /** Remove source segment */
 function remove_src<T>(root: Reconciler<T>, item: Segment<T>) {
-    if (item.p) { // when current segment has previous
-        item.p.n = item.n; // set next of previous to next of current
+    if (item.$prev_src) { // when current segment has previous
+        item.$prev_src.$next_src = item.$next_src; // set next of previous to next of current
     } else { // when current segment is first
-        root.s = item.n; // set next as first
+        root.$first_src = item.$next_src; // set next as first
     }
-    if (item.n) { // when current segment has next
-        item.n.p = item.p; // set previous of next to previous
+    if (item.$next_src) { // when current segment has next
+        item.$next_src.$prev_src = item.$prev_src; // set previous of next to previous
     }
 }
 
 /** Append new destination segment to end */
 function append_dst<T>(root: Reconciler<T>, item: Segment<T>) {
     const {
-        b: last, // last destination segment
+        $last_dst, // last destination segment
     } = root;
 
-    if (last) {
-        last.a = item; // set item as next for last
-        item.b = last; // set last as previous for item
+    if ($last_dst) {
+        $last_dst.$next_dst = item; // set item as next for last
+        item.$prev_dst = $last_dst; // set last as previous for item
     } else {
-        root.a = item; // set a first item
+        root.$first_dst = item; // set a first item
     }
 
-    root.b = item; // set a last item
+    root.$last_dst = item; // set a last item
 }
 
 /** Remove destination segment */
 function remove_dst<T>(root: Reconciler<T>, item: Segment<T>) {
-    if (item.b) { // when current segment has previous
-        item.b.a = item.a; // set next of previous to next of current
+    if (item.$prev_dst) { // when current segment has previous
+        item.$prev_dst.$next_dst = item.$next_dst; // set next of previous to next of current
     } else { // when current segment is first
-        root.a = item.a; // set next as first
+        root.$first_dst = item.$next_dst; // set next as first
     }
-    if (item.a) { // when current segment has next
-        item.a.b = item.b; // set previous of next to previous
+    if (item.$next_dst) { // when current segment has next
+        item.$next_dst.$prev_dst = item.$prev_dst; // set previous of next to previous
     }
 }

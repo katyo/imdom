@@ -67,47 +67,52 @@ export function is_defined<T>(v: T | undefined | null | void): v is T {
 
 /** Virtual node is element node */
 export function is_element(node: DomNode): node is DomElement {
-    return (node.f & DomFlags.Element) as unknown as boolean;
+    return (node.$flags & DomFlags.Element) as unknown as boolean;
 }
 
 /** Virtual node is text node */
 export function is_text(node: DomNode): node is DomText {
-    return (node.f & DomFlags.Text) as unknown as boolean;
+    return (node.$flags & DomFlags.Text) as unknown as boolean;
 }
 
 /** Virtual node is comment node */
 export function is_comment(node: DomNode): node is DomComment {
-    return (node.f & DomFlags.Comment) as unknown as boolean;
+    return (node.$flags & DomFlags.Comment) as unknown as boolean;
 }
 
 /** Virtual node is document type node */
 export function is_doctype(node: DomNode): node is DomDocType {
-    return (node.f & DomFlags.DocType) as unknown as boolean;
+    return (node.$flags & DomFlags.DocType) as unknown as boolean;
+}
+
+/** Virtual node is same */
+export function match_node(node: DomNode, src: DomNode): boolean {
+    return node === src;
 }
 
 /** Internal selector (optimal) */
 export interface Selector {
-    t: string;
-    n: DomNameSpace,
-    i: string | undefined,
-    c: string[] | undefined,
-    k: DomKey | undefined,
+    $tag: string;
+    $ns: DomNameSpace,
+    $id: string | undefined,
+    $class: string[] | undefined,
+    $key: DomKey | undefined,
 }
 
 /** Check when virtual element matched to selector */
 function same_element(elm: DomElement, sel: Selector): boolean {
-    const {x} = elm;
-    return x.n == sel.n && // namespace is same
-        x.t == sel.t && // tag name is same
-        sel.i == x.i && // identifier is same
-        (!sel.c || x.c && has_classes(sel.c, x.c)) && // has same classes
-        sel.k == x.k || // key is same
+    const {$sel} = elm;
+    return $sel.$ns == sel.$ns && // namespace is same
+        $sel.$tag == sel.$tag && // tag name is same
+        $sel.$id == sel.$id && // identifier is same
+        (!sel.$class || $sel.$class && has_classes(sel.$class, $sel.$class)) && // has same classes
+        sel.$key == $sel.$key || // key is same
         false; // not same
 }
 
 /** Check when virtual text node matched to string */
 function same_text<T extends DomText | DomComment>(txt: T, str: string): boolean {
-    return txt.t == str;
+    return txt.$text == str;
 }
 
 /** Virtual node is element which matched to selector */
@@ -127,7 +132,7 @@ export function match_comment(node: DomNode, str: string): node is DomComment {
 
 /** Virtual node is document type with nodeName which matched to string */
 export function match_doctype(node: DomNode, dt: DomDocTypeSpec): node is DomDocType {
-    return is_doctype(node) && node.d.n == dt.n && node.d.p == dt.p && node.d.s == dt.s;
+    return is_doctype(node) && node.$spec.$name == dt.$name && node.$spec.$pub_id == dt.$pub_id && node.$spec.$sys_id == dt.$sys_id;
 }
 
 /** Parse element selector from string */
@@ -138,14 +143,14 @@ export function parse_selector(sel: string): DomSelector {
     const res: DomSelector = {
         //n: ns_i && parse_ns(sel.substring(0, ns_i)) || DomNamespace.XHTML,
         //t: sel.substring(ns_i ? ns_i + 1 : 0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div'
-        n: DomNameSpace.XHTML,
-        t: sel.substring(0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div',
-        i: NULL,
-        c: NULL,
-        k: NULL,
+        $ns: DomNameSpace.XHTML,
+        $tag: sel.substring(0, id_i >= 0 ? id_i : cls_i >= 0 ? cls_i : sel.length) || 'div',
+        $id: NULL,
+        $class: NULL,
+        $key: NULL,
     };
-    if (id_i >= 0) res.i = sel.substring(id_i + 1, cls_i >= 0 ? cls_i : sel.length);
-    if (cls_i >= 0) res.c = parse_classes(sel.substring(cls_i + 1, sel.length));
+    if (id_i >= 0) res.$id = sel.substring(id_i + 1, cls_i >= 0 ? cls_i : sel.length);
+    if (cls_i >= 0) res.$class = parse_classes(sel.substring(cls_i + 1, sel.length));
     return res;
 }
 
@@ -182,19 +187,16 @@ function has_classes(req: string[], all: DomClassSet): boolean {
 
 /** Get selector from DOM element */
 export function node_selector(elm: Element): DomSelector {
-    const tag = elm.tagName.toLowerCase();
-    const id = get_attr_str(elm, 'id');
-    const cls = parse_classes(get_attr(elm, 'class') as string);
     return {
         // full selector
         /*s: tag
             + (id ? '#' + id : '')
             + (cls ? build_classes(cls, '.') : ''),*/
-        n: parse_ns_uri(elm.namespaceURI) as DomNameSpace, // name space
-        t: tag, // tag name
-        i: id, // identifier
-        c: cls, // classes
-        k: get_attr_str(elm, 'data-key'), // key
+        $ns: parse_ns_uri(elm.namespaceURI) as DomNameSpace, // name space
+        $tag: elm.tagName.toLowerCase(), // tag name
+        $id: get_attr_str(elm, 'id'), // identifier
+        $class: parse_classes(get_attr(elm, 'class') as string), // classes
+        $key: get_attr_str(elm, 'data-key'), // key
     };
 }
 
@@ -250,7 +252,7 @@ export function parse_ns_uri(ns: string | null): DomNameSpace | undefined {
 
 /** Get real DOM element from virtual */
 export function element_of<T extends Element = Element>(elm: DomElement): T {
-    return elm.$ as T;
+    return elm.$node as T;
 }
 
 /** Get owner document of DOM node */
@@ -487,7 +489,7 @@ export function selection_paste(content: string, sel: Selection, text: string): 
 
 /** Get selection region or cursor position */
 export function selection_of(node: DomNode): Selection {
-    const doc = document_of(node.$);
+    const doc = document_of(node.$node);
     if (DEBUG) assert(doc, 'Cannot get document of node', node);
 
     const sel = doc.getSelection()!;
@@ -510,20 +512,20 @@ export function find_point(root: DomNode, node: Node, offset: number): number {
 
 function find_point_recurse(state: { p: number }, cur: DomNode, node: Node, offset: number): boolean {
     if (is_text(cur)) {
-        if (cur.$ == node) {
-            state.p += min(offset, cur.t.length);
+        if (cur.$node == node) {
+            state.p += min(offset, cur.$text.length);
             //state.p = offset;
             return true;
         } else {
-            state.p += cur.t.length;
+            state.p += cur.$text.length;
             return false;
         }
-    } else if (cur.$ == node) {
+    } else if (cur.$node == node) {
         return true;
-    } if (is_element(cur) && cur._.length) {
-        const count = cur.$ == node ? offset : cur._.length;
+    } if (is_element(cur) && cur.$nodes.length) {
+        const count = cur.$node == node ? offset : cur.$nodes.length;
         for (let i = 0; i < count; i++) {
-            if (find_point_recurse(state, cur._[i], node, offset)) {
+            if (find_point_recurse(state, cur.$nodes[i], node, offset)) {
                 return true;
             }
         }
@@ -533,7 +535,7 @@ function find_point_recurse(state: { p: number }, cur: DomNode, node: Node, offs
 
 /** Set selection range or cursor position */
 export function selection_to(root: DomElement, sel: Selection): void {
-    const doc = document_of(root.$);
+    const doc = document_of(root.$node);
     if (!doc) return;
 
     const csel = doc.getSelection();
@@ -572,13 +574,13 @@ export function selection_to(root: DomElement, sel: Selection): void {
 /** Pick character position in DOM */
 export function pick_point(root: DomNode, pos: number): [Node, number] {
     const state: [Node, number] = [
-        root.$,
+        root.$node,
         pos,
     ];
 
     if (!pick_point_recurse(state, root)) {
         if (!state[1]) {
-            state[1] = is_element(root) ? root._.length : is_text(root) ? root.t.length : 0;
+            state[1] = is_element(root) ? root.$nodes.length : is_text(root) ? root.$text.length : 0;
         }
     }
 
@@ -587,20 +589,18 @@ export function pick_point(root: DomNode, pos: number): [Node, number] {
 
 function pick_point_recurse(state: [Node, number], cur: DomNode): boolean {
     if (is_text(cur)) {
-        if (state[1] < cur.t.length) {
-            state[0] = cur.$;
+        if (state[1] < cur.$text.length) {
+            state[0] = cur.$node;
             return true;
         } else {
-            state[1] -= cur.t.length;
+            state[1] -= cur.$text.length;
             return false;
         }
     } else if (is_element(cur)) {
-        if (cur._.length) {
-            const count = cur._.length;
-            for (let i = 0; i < count; i++) {
-                if (pick_point_recurse(state, cur._[i])) {
-                    return true;
-                }
+        const {$nodes} = cur;
+        for (let i = 0; i < $nodes.length; i++) {
+            if (pick_point_recurse(state, $nodes[i])) {
+                return true;
             }
         }
     }

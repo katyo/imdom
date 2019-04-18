@@ -8,14 +8,14 @@ function match(node: Node, ctx: Node) {
 }
 
 function nth<T>(state: Reconciler<T>, i: number): Segment<T> | undefined {
-    let s = state.s;
-    for (; s && i; s = s.n!, i--);
+    let s = state.$first_src;
+    for (; s && i; s = s.$next_src!, i--);
     return s;
 }
 
 function lth<T>(state: Reconciler<T>, i: number): Segment<T> | undefined {
-    let d = state.a;
-    for (; d && i; d = d.a!, i--);
+    let d = state.$first_dst;
+    for (; d && i; d = d.$next_dst!, i--);
     return d;
 }
 
@@ -74,14 +74,14 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 8, true);
 
                 ok(!node1);
-                ok(state.c);
-                ok(!state.a);
-                ok(!state.b);
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
+                ok(state.$current);
+                ok(!state.$first_dst);
+                ok(!state.$last_dst);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6, 7]);
                 se(nth(state, 1), void 0);
                 se(lth(state, 0), void 0);
-                se(state.c, nth(state, 0));
+                se(state.$current, nth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, []);
@@ -91,19 +91,19 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 1, true);
 
                 ok(node1);
-                ok(state.c);
-                ok(state.a);
-                ok(state.b);
+                ok(state.$current);
+                ok(state.$first_dst);
+                ok(state.$last_dst);
                 se(node1, 1);
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [2, 3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [2, 3, 4, 5, 6, 7]);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 0));
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
-                se(state.c, nth(state, 1));
+                se(state.$last_dst, lth(state, 0));
+                se(state.$current, nth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1]);
@@ -113,21 +113,21 @@ describe('reconciler', () => {
                 const node1 = reuse_node(state, match, 2, true);
 
                 ok(node1);
-                ok(state.c);
-                ok(state.a);
-                ok(state.b);
+                ok(state.$current);
+                ok(state.$first_dst);
+                ok(state.$last_dst);
                 se(node1, 2);
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [2]);
-                se(nth(state, 2)!.t, Op.Remove);
-                dse(nth(state, 2)!._, [3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [2]);
+                se(nth(state, 2)!.$op, Op.Remove);
+                dse(nth(state, 2)!.$nodes, [3, 4, 5, 6, 7]);
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
-                se(state.c, nth(state, 2));
+                se(state.$last_dst, lth(state, 0));
+                se(state.$current, nth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [2]);
@@ -138,17 +138,17 @@ describe('reconciler', () => {
 
                 ok(node1);
                 se(node1, 3);
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [3]);
-                se(nth(state, 2)!.t, Op.Remove);
-                dse(nth(state, 2)!._, [4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [3]);
+                se(nth(state, 2)!.$op, Op.Remove);
+                dse(nth(state, 2)!.$nodes, [4, 5, 6, 7]);
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
-                se(state.c, nth(state, 2));
+                se(state.$last_dst, lth(state, 0));
+                se(state.$current, nth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [3]);
@@ -159,15 +159,15 @@ describe('reconciler', () => {
 
                 ok(node1);
                 se(node1, 7);
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [7]);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 1));
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
-                se(state.c, nth(state, 0));
+                se(state.$last_dst, lth(state, 0));
+                se(state.$current, nth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [7]);
@@ -184,15 +184,15 @@ describe('reconciler', () => {
                     se(node1, 1);
                     ok(node2);
                     se(node2, 2);
-                    se(nth(state, 0)!.t, Op.Update);
-                    dse(nth(state, 0)!._, [1, 2]);
-                    se(nth(state, 1)!.t, Op.Remove);
-                    dse(nth(state, 1)!._, [3, 4, 5, 6, 7]);
+                    se(nth(state, 0)!.$op, Op.Update);
+                    dse(nth(state, 0)!.$nodes, [1, 2]);
+                    se(nth(state, 1)!.$op, Op.Remove);
+                    dse(nth(state, 1)!.$nodes, [3, 4, 5, 6, 7]);
                     se(nth(state, 2), void 0);
                     se(lth(state, 0), nth(state, 0));
                     se(lth(state, 1), void 0);
-                    se(state.b, lth(state, 0));
-                    se(state.c, nth(state, 1));
+                    se(state.$last_dst, lth(state, 0));
+                    se(state.$current, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [1, 2]);
@@ -206,17 +206,17 @@ describe('reconciler', () => {
                     se(node1, 2);
                     ok(node2);
                     se(node2, 3);
-                    se(nth(state, 0)!.t, Op.Remove);
-                    dse(nth(state, 0)!._, [1]);
-                    se(nth(state, 1)!.t, Op.Update);
-                    dse(nth(state, 1)!._, [2, 3]);
-                    se(nth(state, 2)!.t, Op.Remove);
-                    dse(nth(state, 2)!._, [4, 5, 6, 7]);
+                    se(nth(state, 0)!.$op, Op.Remove);
+                    dse(nth(state, 0)!.$nodes, [1]);
+                    se(nth(state, 1)!.$op, Op.Update);
+                    dse(nth(state, 1)!.$nodes, [2, 3]);
+                    se(nth(state, 2)!.$op, Op.Remove);
+                    dse(nth(state, 2)!.$nodes, [4, 5, 6, 7]);
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), void 0);
-                    se(state.b, lth(state, 0));
-                    se(state.c, nth(state, 2));
+                    se(state.$last_dst, lth(state, 0));
+                    se(state.$current, nth(state, 2));
 
                     apply(state, nodes);
                     dse(nodes, [2, 3]);
@@ -230,15 +230,15 @@ describe('reconciler', () => {
                     se(node1, 6);
                     ok(node2);
                     se(node2, 7);
-                    se(nth(state, 0)!.t, Op.Remove);
-                    dse(nth(state, 0)!._, [1, 2, 3, 4, 5]);
-                    se(nth(state, 1)!.t, Op.Update);
-                    dse(nth(state, 1)!._, [6, 7]);
+                    se(nth(state, 0)!.$op, Op.Remove);
+                    dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5]);
+                    se(nth(state, 1)!.$op, Op.Update);
+                    dse(nth(state, 1)!.$nodes, [6, 7]);
                     se(nth(state, 2), void 0);
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), void 0);
-                    se(state.b, lth(state, 0));
-                    se(state.c, nth(state, 0));
+                    se(state.$last_dst, lth(state, 0));
+                    se(state.$current, nth(state, 0));
 
                     apply(state, nodes);
                     dse(nodes, [6, 7]);
@@ -252,18 +252,18 @@ describe('reconciler', () => {
                     se(node1, 1);
                     ok(node2);
                     se(node2, 7);
-                    se(nth(state, 0)!.t, Op.Update);
-                    dse(nth(state, 0)!._, [1]);
-                    se(nth(state, 1)!.t, Op.Remove);
-                    dse(nth(state, 1)!._, [2, 3, 4, 5, 6]);
-                    se(nth(state, 2)!.t, Op.Update);
-                    dse(nth(state, 2)!._, [7]);
+                    se(nth(state, 0)!.$op, Op.Update);
+                    dse(nth(state, 0)!.$nodes, [1]);
+                    se(nth(state, 1)!.$op, Op.Remove);
+                    dse(nth(state, 1)!.$nodes, [2, 3, 4, 5, 6]);
+                    se(nth(state, 2)!.$op, Op.Update);
+                    dse(nth(state, 2)!.$nodes, [7]);
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 0));
                     se(lth(state, 1), nth(state, 2));
                     se(lth(state, 2), void 0);
-                    se(state.b, lth(state, 1));
-                    se(state.c, nth(state, 1));
+                    se(state.$last_dst, lth(state, 1));
+                    se(state.$current, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [1, 7]);
@@ -279,18 +279,18 @@ describe('reconciler', () => {
                     se(node1, 2);
                     ok(node2);
                     se(node2, 1);
-                    se(nth(state, 0)!.t, Op.Update);
-                    dse(nth(state, 0)!._, [1]);
-                    se(nth(state, 1)!.t, Op.Update);
-                    dse(nth(state, 1)!._, [2]);
-                    se(nth(state, 2)!.t, Op.Remove);
-                    dse(nth(state, 2)!._, [3, 4, 5, 6, 7]);
+                    se(nth(state, 0)!.$op, Op.Update);
+                    dse(nth(state, 0)!.$nodes, [1]);
+                    se(nth(state, 1)!.$op, Op.Update);
+                    dse(nth(state, 1)!.$nodes, [2]);
+                    se(nth(state, 2)!.$op, Op.Remove);
+                    dse(nth(state, 2)!.$nodes, [3, 4, 5, 6, 7]);
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 1));
                     se(lth(state, 1), nth(state, 0));
                     se(lth(state, 2), void 0);
-                    se(state.b, lth(state, 1));
-                    se(state.c, nth(state, 2));
+                    se(state.$last_dst, lth(state, 1));
+                    se(state.$current, nth(state, 2));
 
                     apply(state, nodes);
                     dse(nodes, [2, 1]);
@@ -304,20 +304,20 @@ describe('reconciler', () => {
                     se(node1, 3);
                     ok(node2);
                     se(node2, 2);
-                    se(nth(state, 0)!.t, Op.Remove);
-                    dse(nth(state, 0)!._, [1]);
-                    se(nth(state, 1)!.t, Op.Update);
-                    dse(nth(state, 1)!._, [2]);
-                    se(nth(state, 2)!.t, Op.Update);
-                    dse(nth(state, 2)!._, [3]);
-                    se(nth(state, 3)!.t, Op.Remove);
-                    dse(nth(state, 3)!._, [4, 5, 6, 7]);
+                    se(nth(state, 0)!.$op, Op.Remove);
+                    dse(nth(state, 0)!.$nodes, [1]);
+                    se(nth(state, 1)!.$op, Op.Update);
+                    dse(nth(state, 1)!.$nodes, [2]);
+                    se(nth(state, 2)!.$op, Op.Update);
+                    dse(nth(state, 2)!.$nodes, [3]);
+                    se(nth(state, 3)!.$op, Op.Remove);
+                    dse(nth(state, 3)!.$nodes, [4, 5, 6, 7]);
                     se(nth(state, 4), void 0);
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 1));
                     se(lth(state, 2), void 0);
-                    se(state.b, lth(state, 1));
-                    se(state.c, nth(state, 3));
+                    se(state.$last_dst, lth(state, 1));
+                    se(state.$current, nth(state, 3));
 
                     apply(state, nodes);
                     dse(nodes, [3, 2]);
@@ -331,18 +331,18 @@ describe('reconciler', () => {
                     se(node1, 7);
                     ok(node2);
                     se(node2, 6);
-                    se(nth(state, 0)!.t, Op.Remove);
-                    dse(nth(state, 0)!._, [1, 2, 3, 4, 5]);
-                    se(nth(state, 1)!.t, Op.Update);
-                    dse(nth(state, 1)!._, [6]);
-                    se(nth(state, 2)!.t, Op.Update);
-                    dse(nth(state, 2)!._, [7]);
+                    se(nth(state, 0)!.$op, Op.Remove);
+                    dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5]);
+                    se(nth(state, 1)!.$op, Op.Update);
+                    dse(nth(state, 1)!.$nodes, [6]);
+                    se(nth(state, 2)!.$op, Op.Update);
+                    dse(nth(state, 2)!.$nodes, [7]);
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 1));
                     se(lth(state, 2), void 0);
-                    se(state.b, lth(state, 1));
-                    se(state.c, nth(state, 0));
+                    se(state.$last_dst, lth(state, 1));
+                    se(state.$current, nth(state, 0));
 
                     apply(state, nodes);
                     dse(nodes, [7, 6]);
@@ -356,18 +356,18 @@ describe('reconciler', () => {
                     se(node1, 7);
                     ok(node2);
                     se(node2, 1);
-                    se(nth(state, 0)!.t, Op.Update);
-                    dse(nth(state, 0)!._, [1]);
-                    se(nth(state, 1)!.t, Op.Remove);
-                    dse(nth(state, 1)!._, [2, 3, 4, 5, 6]);
-                    se(nth(state, 2)!.t, Op.Update);
-                    dse(nth(state, 2)!._, [7]);
+                    se(nth(state, 0)!.$op, Op.Update);
+                    dse(nth(state, 0)!.$nodes, [1]);
+                    se(nth(state, 1)!.$op, Op.Remove);
+                    dse(nth(state, 1)!.$nodes, [2, 3, 4, 5, 6]);
+                    se(nth(state, 2)!.$op, Op.Update);
+                    dse(nth(state, 2)!.$nodes, [7]);
                     se(nth(state, 3), void 0);
                     se(lth(state, 0), nth(state, 2));
                     se(lth(state, 1), nth(state, 0));
                     se(lth(state, 2), void 0);
-                    se(state.b, lth(state, 1));
-                    se(state.c, nth(state, 1));
+                    se(state.$last_dst, lth(state, 1));
+                    se(state.$current, nth(state, 1));
 
                     apply(state, nodes);
                     dse(nodes, [7, 1]);
@@ -381,13 +381,13 @@ describe('reconciler', () => {
             it('insert', () => {
                 push_node(state, 8);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6, 7]);
                 se(nth(state, 1), void 0);
-                se(lth(state, 0)!.t, Op.Insert);
-                dse(lth(state, 0)!._, [8]);
+                se(lth(state, 0)!.$op, Op.Insert);
+                dse(lth(state, 0)!.$nodes, [8]);
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
+                se(state.$last_dst, lth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [8]);
@@ -397,16 +397,16 @@ describe('reconciler', () => {
                 reuse_node(state, match, 1, true);
                 push_node(state, 8);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [2, 3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [2, 3, 4, 5, 6, 7]);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1, 8]);
@@ -416,18 +416,18 @@ describe('reconciler', () => {
                 reuse_node(state, match, 2, true);
                 push_node(state, 8);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [2]);
-                se(nth(state, 2)!.t, Op.Remove);
-                dse(nth(state, 2)!._, [3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [2]);
+                se(nth(state, 2)!.$op, Op.Remove);
+                dse(nth(state, 2)!.$nodes, [3, 4, 5, 6, 7]);
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [2, 8]);
@@ -437,17 +437,17 @@ describe('reconciler', () => {
                 push_node(state, 8);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [7]);
                 se(nth(state, 2), void 0);
 
-                se(lth(state, 0)!.t, Op.Insert);
-                dse(lth(state, 0)!._, [8]);
+                se(lth(state, 0)!.$op, Op.Insert);
+                dse(lth(state, 0)!.$nodes, [8]);
                 se(lth(state, 1), nth(state, 1));
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [8, 7]);
@@ -457,17 +457,17 @@ describe('reconciler', () => {
                 reuse_node(state, match, 7, true);
                 push_node(state, 8);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [7]);
                 se(nth(state, 2), void 0);
 
                 se(lth(state, 0), nth(state, 1));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [7, 8]);
@@ -479,13 +479,13 @@ describe('reconciler', () => {
                 push_node(state, 8);
                 push_node(state, 9);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5, 6, 7]);
                 se(nth(state, 1), void 0);
-                se(lth(state, 0)!.t, Op.Insert);
-                dse(lth(state, 0)!._, [8, 9]);
+                se(lth(state, 0)!.$op, Op.Insert);
+                dse(lth(state, 0)!.$nodes, [8, 9]);
                 se(lth(state, 1), void 0);
-                se(state.b, lth(state, 0));
+                se(state.$last_dst, lth(state, 0));
 
                 apply(state, nodes);
                 dse(nodes, [8, 9]);
@@ -496,16 +496,16 @@ describe('reconciler', () => {
                 push_node(state, 9);
                 push_node(state, 8);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [2, 3, 4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [2, 3, 4, 5, 6, 7]);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [9, 8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [9, 8]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [1, 9, 8]);
@@ -517,18 +517,18 @@ describe('reconciler', () => {
                 push_node(state, 8);
                 push_node(state, 9);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [2, 3]);
-                se(nth(state, 2)!.t, Op.Remove);
-                dse(nth(state, 2)!._, [4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [2, 3]);
+                se(nth(state, 2)!.$op, Op.Remove);
+                dse(nth(state, 2)!.$nodes, [4, 5, 6, 7]);
                 se(nth(state, 3), void 0);
                 se(lth(state, 0), nth(state, 1));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [2, 3, 8, 9]);
@@ -540,16 +540,16 @@ describe('reconciler', () => {
                 push_node(state, 8);
                 push_node(state, 9);
 
-                se(nth(state, 0)!.t, Op.Remove);
-                dse(nth(state, 0)!._, [1, 2, 3, 4, 5]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [6, 7]);
+                se(nth(state, 0)!.$op, Op.Remove);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3, 4, 5]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [6, 7]);
                 se(nth(state, 2), void 0);
                 se(lth(state, 0), nth(state, 1));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), void 0);
-                se(state.b, lth(state, 1));
+                se(state.$last_dst, lth(state, 1));
 
                 apply(state, nodes);
                 dse(nodes, [6, 7, 8, 9]);
@@ -565,18 +565,18 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2, 3]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [4, 5, 6, 7]);
                 se(nth(state, 2), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8]);
                 se(lth(state, 2), nth(state, 1));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 4, 5, 6, 7]);
@@ -593,18 +593,18 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2, 3]);
-                se(nth(state, 1)!.t, Op.Update);
-                dse(nth(state, 1)!._, [4, 5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3]);
+                se(nth(state, 1)!.$op, Op.Update);
+                dse(nth(state, 1)!.$nodes, [4, 5, 6, 7]);
                 se(nth(state, 2), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), nth(state, 1));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 4, 5, 6, 7]);
@@ -619,20 +619,20 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2, 3]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [4]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [4]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [5, 6, 7]);
                 se(nth(state, 3), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 5, 6, 7]);
@@ -647,20 +647,20 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2, 3]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [4, 5]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [4, 5]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [6, 7]);
                 se(nth(state, 3), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 6, 7]);
@@ -674,20 +674,20 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [3, 4, 5]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [3, 4, 5]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [6, 7]);
                 se(nth(state, 3), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 8, 9, 6, 7]);
@@ -703,20 +703,20 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2, 3]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [4]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [5, 6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2, 3]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [4]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [5, 6, 7]);
                 se(nth(state, 3), void 0);
 
                 se(lth(state, 0), nth(state, 0));
-                se(lth(state, 1)!.t, Op.Insert);
-                dse(lth(state, 1)!._, [8, 9]);
+                se(lth(state, 1)!.$op, Op.Insert);
+                dse(lth(state, 1)!.$nodes, [8, 9]);
                 se(lth(state, 2), nth(state, 2));
                 se(lth(state, 3), void 0);
-                se(state.b, lth(state, 2));
+                se(state.$last_dst, lth(state, 2));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 3, 8, 9, 5, 6, 7]);
@@ -731,23 +731,23 @@ describe('reconciler', () => {
                 reuse_node(state, match, 6, true);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [3, 4]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [5]);
-                se(nth(state, 3)!.t, Op.Update);
-                dse(nth(state, 3)!._, [6, 7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [3, 4]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [5]);
+                se(nth(state, 3)!.$op, Op.Update);
+                dse(nth(state, 3)!.$nodes, [6, 7]);
                 se(nth(state, 4), void 0);
 
                 se(lth(state, 0), nth(state, 0));
                 se(lth(state, 1), nth(state, 2));
-                se(lth(state, 2)!.t, Op.Insert);
-                dse(lth(state, 2)!._, [8, 9]);
+                se(lth(state, 2)!.$op, Op.Insert);
+                dse(lth(state, 2)!.$nodes, [8, 9]);
                 se(lth(state, 3), nth(state, 3));
                 se(lth(state, 4), void 0);
-                se(state.b, lth(state, 3));
+                se(state.$last_dst, lth(state, 3));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 5, 8, 9, 6, 7]);
@@ -762,23 +762,23 @@ describe('reconciler', () => {
                 push_node(state, 9);
                 reuse_node(state, match, 7, true);
 
-                se(nth(state, 0)!.t, Op.Update);
-                dse(nth(state, 0)!._, [1, 2]);
-                se(nth(state, 1)!.t, Op.Remove);
-                dse(nth(state, 1)!._, [3, 4]);
-                se(nth(state, 2)!.t, Op.Update);
-                dse(nth(state, 2)!._, [5, 6]);
-                se(nth(state, 3)!.t, Op.Update);
-                dse(nth(state, 3)!._, [7]);
+                se(nth(state, 0)!.$op, Op.Update);
+                dse(nth(state, 0)!.$nodes, [1, 2]);
+                se(nth(state, 1)!.$op, Op.Remove);
+                dse(nth(state, 1)!.$nodes, [3, 4]);
+                se(nth(state, 2)!.$op, Op.Update);
+                dse(nth(state, 2)!.$nodes, [5, 6]);
+                se(nth(state, 3)!.$op, Op.Update);
+                dse(nth(state, 3)!.$nodes, [7]);
                 se(nth(state, 4), void 0);
 
                 se(lth(state, 0), nth(state, 0));
                 se(lth(state, 1), nth(state, 2));
-                se(lth(state, 2)!.t, Op.Insert);
-                dse(lth(state, 2)!._, [8, 9]);
+                se(lth(state, 2)!.$op, Op.Insert);
+                dse(lth(state, 2)!.$nodes, [8, 9]);
                 se(lth(state, 3), nth(state, 3));
                 se(lth(state, 4), void 0);
-                se(state.b, lth(state, 3));
+                se(state.$last_dst, lth(state, 3));
 
                 apply(state, nodes);
                 dse(nodes, [1, 2, 5, 6, 8, 9, 7]);

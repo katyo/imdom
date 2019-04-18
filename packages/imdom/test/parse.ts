@@ -1,5 +1,13 @@
 import { ok, strictEqual as se, deepStrictEqual as dse } from 'assert';
-import { NULL as _, DomElement, DomNameSpace, DomText, parse, DomFlags } from '../src/index';
+import { NULL as _, DomKey, DomSelector, DomClassSet, DomElement, DomNameSpace, DomText, parse, DomFlags, DomTxnId } from '../src/index';
+
+function mksel($ns: DomNameSpace, $tag: string, $id?: string, $class?: DomClassSet, $key?: DomKey): DomSelector {
+    return { $ns, $tag, $id, $class, $key };
+}
+
+function mkval<T>($value: T, $txnid: DomTxnId = 0) {
+    return { $value, $txnid };
+}
 
 describe('parse', () => {
     describe('fragments', () => {
@@ -8,15 +16,15 @@ describe('parse', () => {
             const vdom = parse(elm);
 
             ok(vdom);
-            ok(vdom._);
-            se(vdom._.length, 0);
+            ok(vdom.$nodes);
+            se(vdom.$nodes.length, 0);
 
-            se(vdom.$, elm);
-            dse(vdom.x, {n: DomNameSpace.XHTML, t: 'div', i: _, c: _, k: _});
-            dse(vdom.a, {});
-            dse(vdom.s, {});
-            dse(vdom.c, {});
-            dse(vdom._, []);
+            se(vdom.$node, elm);
+            dse(vdom.$sel, mksel(DomNameSpace.XHTML, 'div'));
+            dse(vdom.$attrs, {});
+            dse(vdom.$style, {});
+            dse(vdom.$class, {});
+            dse(vdom.$nodes, []);
         });
 
         it('two child nodes', () => {
@@ -24,23 +32,23 @@ describe('parse', () => {
             elm.innerHTML = '<span></span><p></p>';
             const vdom = parse(elm);
 
-            se(vdom.$, elm);
-            se(vdom._.length, 2);
+            se(vdom.$node, elm);
+            se(vdom.$nodes.length, 2);
 
-            const n1 = vdom._[0] as DomElement;
-            const n2 = vdom._[1] as DomElement;
+            const n1 = vdom.$nodes[0] as DomElement;
+            const n2 = vdom.$nodes[1] as DomElement;
 
-            se(n1.$, elm.firstChild);
-            se(n2.$, elm.lastChild);
-            dse(n1.x, {n: DomNameSpace.XHTML, t: 'span', i: _, c: _, k: _});
-            dse(n2.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: _, k: _});
-            se(n1.f, DomFlags.Element);
-            se(n2.f, DomFlags.Element);
-            dse(n1.a, {});
-            dse(n1.s, {});
-            dse(n1.c, {});
-            dse(n1._, []);
-            dse(n2._, []);
+            se(n1.$node, elm.firstChild);
+            se(n2.$node, elm.lastChild);
+            dse(n1.$sel, mksel(DomNameSpace.XHTML, 'span'));
+            dse(n2.$sel, mksel(DomNameSpace.XHTML, 'p'));
+            se(n1.$flags, DomFlags.Element);
+            se(n2.$flags, DomFlags.Element);
+            dse(n1.$attrs, {});
+            dse(n1.$style, {});
+            dse(n1.$class, {});
+            dse(n1.$nodes, []);
+            dse(n2.$nodes, []);
         });
 
         it('two child nodes with text contents', () => {
@@ -50,15 +58,15 @@ describe('parse', () => {
             const elm2 = elm.children[1];
             const vdom = parse(elm);
 
-            se(vdom.$, elm);
-            se(vdom._.length, 2);
-            const n1 = vdom._[0] as DomElement;
-            const n2 = vdom._[1] as DomElement;
-            se(n1.$, elm1);
-            se(n1._.length, 1);
-            se((n1._[0] as DomText).t, '...');
-            se(n2.$, elm2);
-            se(n2._.length, 0);
+            se(vdom.$node, elm);
+            se(vdom.$nodes.length, 2);
+            const n1 = vdom.$nodes[0] as DomElement;
+            const n2 = vdom.$nodes[1] as DomElement;
+            se(n1.$node, elm1);
+            se(n1.$nodes.length, 1);
+            se((n1.$nodes[0] as DomText).$text, '...');
+            se(n2.$node, elm2);
+            se(n2.$nodes.length, 0);
         });
 
         it('three child nodes with offset', () => {
@@ -66,28 +74,28 @@ describe('parse', () => {
             elm.innerHTML = '<div></div><span></span><p></p><img></img><blockquote></blockquote><span></span>';
             const vdom = parse(elm, 2, 3);
 
-            se(vdom.$, elm);
-            se(vdom._.length, 3);
+            se(vdom.$node, elm);
+            se(vdom.$nodes.length, 3);
 
-            const n1 = vdom._[0] as DomElement;
-            const n2 = vdom._[1] as DomElement;
-            const n3 = vdom._[2] as DomElement;
+            const n1 = vdom.$nodes[0] as DomElement;
+            const n2 = vdom.$nodes[1] as DomElement;
+            const n3 = vdom.$nodes[2] as DomElement;
 
-            se(n1.$, elm.children[2]);
-            se(n2.$, elm.children[3]);
-            se(n3.$, elm.children[4]);
-            dse(n1.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: _, k: _});
-            dse(n2.x, {n: DomNameSpace.XHTML, t: 'img', i: _, c: _, k: _});
-            dse(n3.x, {n: DomNameSpace.XHTML, t: 'blockquote', i: _, c: _, k: _});
-            se(n1.f, DomFlags.Element);
-            se(n2.f, DomFlags.Element);
-            se(n3.f, DomFlags.Element);
-            dse(n1.a, {});
-            dse(n1.s, {});
-            dse(n1.c, {});
-            dse(n1._, []);
-            dse(n2._, []);
-            dse(n3._, []);
+            se(n1.$node, elm.children[2]);
+            se(n2.$node, elm.children[3]);
+            se(n3.$node, elm.children[4]);
+            dse(n1.$sel, mksel(DomNameSpace.XHTML, 'p'));
+            dse(n2.$sel, mksel(DomNameSpace.XHTML, 'img'));
+            dse(n3.$sel, mksel(DomNameSpace.XHTML, 'blockquote'));
+            se(n1.$flags, DomFlags.Element);
+            se(n2.$flags, DomFlags.Element);
+            se(n3.$flags, DomFlags.Element);
+            dse(n1.$attrs, {});
+            dse(n1.$style, {});
+            dse(n1.$class, {});
+            dse(n1.$nodes, []);
+            dse(n2.$nodes, []);
+            dse(n3.$nodes, []);
         });
     });
 
@@ -96,15 +104,15 @@ describe('parse', () => {
         elm.innerHTML = '<span id="unique"></span><p class="paragraph"></p><a class="menu active"></a><div id="page" class="main" data-key="some"></div>';
         const vdom = parse(elm);
 
-        const n1 = vdom._[0] as DomElement;
-        const n2 = vdom._[1] as DomElement;
-        const n3 = vdom._[2] as DomElement;
-        const n4 = vdom._[3] as DomElement;
+        const n1 = vdom.$nodes[0] as DomElement;
+        const n2 = vdom.$nodes[1] as DomElement;
+        const n3 = vdom.$nodes[2] as DomElement;
+        const n4 = vdom.$nodes[3] as DomElement;
 
-        it('with id', () => { dse(n1.x, {n: DomNameSpace.XHTML, t: 'span', i: 'unique', c: _, k: _}); });
-        it('with class', () => { dse(n2.x, {n: DomNameSpace.XHTML, t: 'p', i: _, c: {paragraph: true}, k: _}); });
-        it('with two classes', () => { dse(n3.x, {n: DomNameSpace.XHTML, t: 'a', i: _, c: {menu: true, active: true}, k: _}); });
-        it('with id, class and key', () => { dse(n4.x, {n: DomNameSpace.XHTML, t: 'div', i: 'page', c: {main: true}, k: 'some'}); });
+        it('with id', () => { dse(n1.$sel, mksel(DomNameSpace.XHTML, 'span', 'unique')); });
+        it('with class', () => { dse(n2.$sel, mksel(DomNameSpace.XHTML, 'p', _, {paragraph: true})); });
+        it('with two classes', () => { dse(n3.$sel, mksel(DomNameSpace.XHTML, 'a', _, {menu: true, active: true})); });
+        it('with id, class and key', () => { dse(n4.$sel, mksel(DomNameSpace.XHTML, 'div', 'page', {main: true}, 'some')); });
     });
 
     describe('attributes', () => {
@@ -112,23 +120,23 @@ describe('parse', () => {
         elm.innerHTML = '<input type="text" value="" disabled><input type="checkbox" checked>';
         const vdom = parse(elm);
 
-        const n1 = vdom._[0] as DomElement;
-        const n2 = vdom._[1] as DomElement;
+        const n1 = vdom.$nodes[0] as DomElement;
+        const n2 = vdom.$nodes[1] as DomElement;
 
         it('enumeration', () => {
-            dse(Object.keys(n1.a).sort(), ['disabled', 'type', 'value']);
-            dse(Object.keys(n2.a).sort(), ['checked', 'type']);
+            dse(Object.keys(n1.$attrs).sort(), ['disabled', 'type', 'value']);
+            dse(Object.keys(n2.$attrs).sort(), ['checked', 'type']);
         });
 
         it('strings', () => {
-            dse(n1.a.type, { v: 'text', t: 0 });
-            dse(n1.a.value, { v: '', t: 0 });
-            dse(n2.a.type, { v: 'checkbox', t: 0 });
+            dse(n1.$attrs.type, mkval('text'));
+            dse(n1.$attrs.value, mkval(''));
+            dse(n2.$attrs.type, mkval('checkbox'));
         });
 
         it('booleans', () => {
-            dse(n1.a.disabled, { v: '', t: 0 });
-            dse(n2.a.checked, { v: '', t: 0 });
+            dse(n1.$attrs.disabled, mkval(''));
+            dse(n2.$attrs.checked, mkval(''));
         });
     });
 
@@ -137,29 +145,29 @@ describe('parse', () => {
         elm.innerHTML = '<div style="left: 0; top: 15%; margin-right: -11pt; padding-bottom: 22px;"></div><span style="display:none"></span><div style="border-radius :4px;background:#f0f"></div>';
         const vdom = parse(elm);
 
-        const n1 = vdom._[0] as DomElement;
-        const n2 = vdom._[1] as DomElement;
-        const n3 = vdom._[2] as DomElement;
+        const n1 = vdom.$nodes[0] as DomElement;
+        const n2 = vdom.$nodes[1] as DomElement;
+        const n3 = vdom.$nodes[2] as DomElement;
 
         it('enumeration', () => {
-            dse(Object.keys(n1.s), ['left', 'top', 'margin-right', 'padding-bottom']);
-            dse(Object.keys(n2.s), ['display']);
-            dse(Object.keys(n3.s), ['border-radius', 'background']);
+            dse(Object.keys(n1.$style), ['left', 'top', 'margin-right', 'padding-bottom']);
+            dse(Object.keys(n2.$style), ['display']);
+            dse(Object.keys(n3.$style), ['border-radius', 'background']);
         });
 
         it('values', () => {
-            dse(n1.s, {
-                left: { v: '0', t: 0 },
-                top: { v: '15%', t: 0 },
-                'margin-right': { v: '-11pt', t: 0 },
-                'padding-bottom': { v: '22px', t: 0 },
+            dse(n1.$style, {
+                left: mkval('0'),
+                top: mkval('15%'),
+                'margin-right': mkval('-11pt'),
+                'padding-bottom': mkval('22px'),
             });
 
-            dse(n2.s, { display: { v: 'none', t: 0 } });
+            dse(n2.$style, { display: mkval('none') });
 
-            dse(n3.s, {
-                'border-radius': { v: '4px', t: 0 },
-                'background': { v: '#f0f', t: 0 },
+            dse(n3.$style, {
+                'border-radius': mkval('4px'),
+                'background': mkval('#f0f'),
             });
         });
     });

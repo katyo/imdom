@@ -31,56 +31,56 @@ export const enum DomFlags {
 /** Basic node fields */
 export interface DomBase<T> {
     /** Node flags */
-    f: DomFlags;
+    $flags: DomFlags;
     /** DOM node */
-    $: T;
+    $node: T;
 }
 
 /** Single text node */
 export interface DomText extends DomBase<Text> {
     /** Text content */
-    t: string;
+    $text: string;
 }
 
 /** Single comment node */
 export interface DomComment extends DomBase<Comment> {
     /** Text content */
-    t: string;
+    $text: string;
 }
 
 /** Single document type */
 export interface DomDocType extends DomBase<DocumentType> {
-    d: DomDocTypeSpec;
+    $spec: DomDocTypeSpec;
 }
 
 /** Document type specifiers */
 export interface DomDocTypeSpec {
     /** Qualified name */
-    n: string;
+    $name: string;
     /** Public id */
-    p: string;
+    $pub_id: string;
     /** System id */
-    s: string;
+    $sys_id: string;
 }
 
 /** Single element node */
 export interface DomElement extends DomBase<Element> {
     /** Element selector */
-    x: DomSelector;
+    $sel: DomSelector;
     /** Mutable attributes */
-    a: DomAttrs;
+    $attrs: DomAttrs;
     /** Classes */
-    c: DomClasses;
+    $class: DomClasses;
     /** Styles */
-    s: DomStyles;
+    $style: DomStyles;
     /** Children nodes */
-    _: DomNodes;
+    $nodes: DomNodes;
 }
 
 /** Sequence of nodes */
 export interface DomFragment extends DomBase<Element> {
     /** Children nodes */
-    _: DomNodes;
+    $nodes: DomNodes;
 }
 
 /** Element selector */
@@ -96,28 +96,28 @@ export interface DomSelector {
     /**
        Element name space
     */
-    n: DomNameSpace,
+    $ns: DomNameSpace,
 
     /**
        Element tag name
 
        The name of tag in lower case.
     */
-    t: string;
+    $tag: string;
 
     /**
        Element identifier
 
        The value of attribute `id`.
     */
-    i: string | undefined;
+    $id: string | undefined;
 
     /**
        Selector-specific classes
 
        Some part of value of attribute `class`.
     */
-    c: DomClassSet | undefined;
+    $class: DomClassSet | undefined;
 
     /**
        Key
@@ -126,7 +126,7 @@ export interface DomSelector {
 
        This value stored in `data-key` attribute.
     */
-    k: DomKey | undefined;
+    $key: DomKey | undefined;
 }
 
 /** Key type */
@@ -284,9 +284,9 @@ export type DomAttrNameBool = { [A in keyof DomAttrMap]: DomAttrMap[A] extends b
 /** Single attribute */
 export interface DomAttr<A extends DomAttrName> {
     /** Attribute value */
-    v: DomAttrType<A>;
+    $value: DomAttrType<A>;
     /** Transaction identifier */
-    t: DomTxnId;
+    $txnid: DomTxnId;
 }
 
 /** Attribute value type */
@@ -304,14 +304,13 @@ export interface DomAttrFn {
 
 /** Set of styles */
 export type DomStyles = Record<DomStyleName, DomStyle<DomStyleVal> | undefined>;
-//export type DomStyles = { [K in DomStyleName]: DomStyle } & Record<string, DomStyle>;
 
 /** Single style */
 export interface DomStyle<S extends keyof DomStyleMap> {
     /** Style value */
-    v: DomStyleMap[S];
+    $value: DomStyleMap[S];
     /** Transaction identifier */
-    t: DomTxnId;
+    $txnid: DomTxnId;
 }
 
 /** Map of available styles */
@@ -332,15 +331,6 @@ export type DomClass = DomTxnId;
 
 /** Set of event listeners */
 export type DomEvents = { [E in keyof DomEventMap]?: DomEventMap[E] };
-//export type DomEvents = { [K in keyof HTMLElementEventMap]?: DomEvent<HTMLElementEventMap[K]> } & { [event: string]: DomEvent<Event> };
-
-/** Single event listener */
-export interface DomEvent<E extends keyof DomEventMap> {
-    /** Event listener function */
-    v: DomEventFn<E>;
-    /** Transaction identifier */
-    t: number;
-}
 
 export type DomEventMap = HTMLElementEventMap & Record<string, Event>;
 

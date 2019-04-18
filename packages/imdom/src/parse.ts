@@ -11,21 +11,21 @@ export function parse(node: Document): DomFragment;
 export function parse(node: Element | Document, offset: number, length: number): DomFragment;
 export function parse(node: Element | Document, offset?: number, length?: number): DomElement | DomFragment {
     return node.nodeType == NodeType.Element && !offset && !length ? parse_element(node as Element) : { // parse DOM fragment
-        f: DomFlags.Empty,
-        $: node, // set owner DOM node
-        _: parse_children(node.childNodes, offset, length) // parse children nodes
+        $flags: DomFlags.Empty,
+        $node: node, // set owner DOM node
+        $nodes: parse_children(node.childNodes, offset, length) // parse children nodes
     } as DomFragment;
 }
 
 function parse_element(node: Element): DomElement {
     return { // parse DOM element
-        f: DomFlags.Element, // set virtual node type to element (initially virtual element is detached)
-        $: node, // set DOM element node
-        x: node_selector(node as Element), // set selector
-        a: parse_attrs((node as Element).attributes), // initially all attributes treated as mutable
-        c: {}, // initially all classes sits in selector
-        s: parse_style((node as Element).getAttribute('style')), // initially all styles treated as mutable
-        _: parse_children(node.childNodes) // parse children nodes
+        $flags: DomFlags.Element, // set virtual node type to element (initially virtual element is detached)
+        $node: node, // set DOM element node
+        $sel: node_selector(node as Element), // set selector
+        $attrs: parse_attrs((node as Element).attributes), // initially all attributes treated as mutable
+        $class: {}, // initially all classes sits in selector
+        $style: parse_style((node as Element).getAttribute('style')), // initially all styles treated as mutable
+        $nodes: parse_children(node.childNodes) // parse children nodes
     };
 }
 
@@ -35,18 +35,18 @@ function parse_node(node: Node): DomNode {
     return nodeType == NodeType.Element ? parse_element(node as Element) :
         nodeType == NodeType.DocType ? {
             // parse DOM document type node
-            f: DomFlags.DocType,
-            $: node as DocumentType,
-            d: {
-                n: (node as DocumentType).name,
-                p: (node as DocumentType).publicId,
-                s: (node as DocumentType).systemId,
+            $flags: DomFlags.DocType,
+            $node: node as DocumentType,
+            $spec: {
+                $name: (node as DocumentType).name,
+                $pub_id: (node as DocumentType).publicId,
+                $sys_id: (node as DocumentType).systemId,
             },
         } as DomDocType : {
             // parse DOM text or comment nodes
-            f: nodeType == NodeType.Text ? DomFlags.Text : DomFlags.Comment, // set virtual node type to text
-            $: node as Text | Comment, // set DOM text node
-            t: node.textContent || EMPTY_STRING, // set text value
+            $flags: nodeType == NodeType.Text ? DomFlags.Text : DomFlags.Comment, // set virtual node type to text
+            $node: node as Text | Comment, // set DOM text node
+            $text: node.textContent || EMPTY_STRING, // set text value
         };
 }
 
@@ -67,8 +67,8 @@ function parse_attrs(node_attrs: NamedNodeMap): DomAttrs {
         const attr = node_attrs[i];
         if (!SPECIAL_ATTR_RE.test(attr.name)) {
             attrs[attr.name] = {
-                v: attr.value,
-                t: 0,
+                $value: attr.value,
+                $txnid: 0,
             }
         }
     }
@@ -84,8 +84,8 @@ function parse_style(style: string | null): DomStyles {
             const m = cssPropRE.exec(style);
             if (m) {
                 styles[m[1]] = {
-                    v: m[2],
-                    t: 0,
+                    $value: m[2],
+                    $txnid: 0,
                 };
             } else {
                 break;

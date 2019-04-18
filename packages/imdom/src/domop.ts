@@ -51,7 +51,7 @@ export function create_comment(str: string): Comment {
 export function create_doctype(dt: DomDocTypeSpec): DocumentType {
     if (BENCH_DOMOP) bench_start(domop_stats!);
 
-    const node = doc.implementation.createDocumentType(dt.n, dt.p, dt.s);
+    const node = doc.implementation.createDocumentType(dt.$name, dt.$pub_id, dt.$sys_id);
 
     if (BENCH_DOMOP) bench_stop(domop_stats!);
 

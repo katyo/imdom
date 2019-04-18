@@ -9,15 +9,15 @@ import { NULL, is_defined, is_element, is_doctype, is_text } from './utils';
 /** Prepare empty DOM fragment for rendering to */
 export function prepare(): DomFragment {
     return {
-        $: NULL as unknown as Element,
-        f: DomFlags.Empty,
-        _: [],
+        $node: NULL as unknown as Element,
+        $flags: DomFlags.Empty,
+        $nodes: [],
     };
 }
 
 /** Stringify fragment to HTML */
 export function format(elm: DomFragment | DomElement): string {
-    return is_element(elm as DomNode) ? format_element("", elm as DomElement) : format_children("", elm._);
+    return is_element(elm as DomNode) ? format_element("", elm as DomElement) : format_children("", elm.$nodes);
 }
 
 function format_children(out: string, children: DomNode[]): string {
@@ -30,14 +30,14 @@ function format_children(out: string, children: DomNode[]): string {
 function format_node(out: string, node: DomNode): string {
     return is_element(node) ? format_element(out, node) :
         is_doctype(node) ? format_doctype(out, node) :
-        out + (is_text(node) ? escape_text(node.t) :
-               `<!--${escape_text(node.t)}-->`);
+        out + (is_text(node) ? escape_text(node.$text) :
+               `<!--${escape_text(node.$text)}-->`);
 }
 
-function format_doctype(out: string, {d}: DomDocType): string {
-    out += `<!DOCTYPE ${d.n}`;
-    if (d.p) {
-        out += ` PUBLIC "${escape_attr(d.p)}" "${escape_attr(d.s)}">`;
+function format_doctype(out: string, {$spec}: DomDocType): string {
+    out += `<!DOCTYPE ${$spec.$name}`;
+    if ($spec.$pub_id) {
+        out += ` PUBLIC "${escape_attr($spec.$pub_id)}" "${escape_attr($spec.$sys_id)}">`;
     } else {
         out += `>`;
     }
@@ -68,33 +68,33 @@ const void_tag = /^(?:area|b(?:ase|r)|col|embed|hr|i(?:mg|nput)|keygen|link|meta
 const code_tag = /^(?:s(?:cript|tyle))$/;
 
 function format_element(out: string, elm: DomElement): string {
-    const sel = elm.x;
-    const tag = sel.t;
+    const sel = elm.$sel;
+    const tag = sel.$tag;
 
     out += `<${tag}`;
 
-    if (sel.i) {
-        out += ` id="${escape_attr(sel.i)}"`;
+    if (sel.$id) {
+        out += ` id="${escape_attr(sel.$id)}"`;
     }
-    out = format_classes(out, sel.c, elm.c);
-    if (sel.k) {
-        out += ` data-key="${format_attr(sel.k)}"`;
+    out = format_classes(out, sel.$class, elm.$class);
+    if (sel.$key) {
+        out += ` data-key="${format_attr(sel.$key)}"`;
     }
-    out = format_attrs(out, elm.a);
-    out = format_styles(out, elm.s);
+    out = format_attrs(out, elm.$attrs);
+    out = format_styles(out, elm.$style);
 
-    if (elm._.length) {
+    const {$nodes} = elm;
+    if ($nodes.length) {
         out += '>';
-        const children = elm._;
         if (code_tag.test(tag)) {
-            for (let i = 0; i < children.length; ) {
-                const node = children[i++];
+            for (let i = 0; i < $nodes.length; ) {
+                const node = $nodes[i++];
                 if (is_text(node)) {
-                    out += escape_code(node.t);
+                    out += escape_code(node.$text);
                 }
             }
         } else {
-            out = format_children(out, children);
+            out = format_children(out, $nodes);
         }
         out += `</${tag}>`;
     } else {
@@ -138,8 +138,8 @@ function format_attrs(out: string, attrs: DomAttrs): string {
     for (const name in attrs) {
         const attr = attrs[name];
         if (attr) {
-            if (is_defined(attr.v)) {
-                out += ` ${name}="${format_attr(attr.v)}"`;
+            if (is_defined(attr.$value)) {
+                out += ` ${name}="${format_attr(attr.$value)}"`;
             } else {
                 out += ` ${name}`;
             }
@@ -158,10 +158,10 @@ function format_styles(out: string, styles: DomStyles): string {
         const style = styles[name];
         if (style) {
             if (once) {
-                out += `;${escape_attr(name)}:${escape_attr(style.v)}`;
+                out += `;${escape_attr(name)}:${escape_attr(style.$value)}`;
             } else {
                 once = true;
-                out += ` style="${escape_attr(name)}:${escape_attr(style.v)}`;
+                out += ` style="${escape_attr(name)}:${escape_attr(style.$value)}`;
             }
         }
     }

@@ -19,9 +19,9 @@ describe('patch', () => {
             tag('div');
             end();
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomElement;
-            se(n1.$, e1);
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomElement;
+            se(n1.$node, e1);
         });
 
         it('reuse single text node with same text', () => {
@@ -31,9 +31,9 @@ describe('patch', () => {
             patch(vdom);
             text('text');
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomText;
-            se(n1.$, e1);
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomText;
+            se(n1.$node, e1);
         });
 
         it('reuse single text node with new text', () => {
@@ -43,10 +43,10 @@ describe('patch', () => {
             patch(vdom);
             text('str');
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomText;
-            se(n1.$, e1);
-            se(n1.t, 'str');
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomText;
+            se(n1.$node, e1);
+            se(n1.$text, 'str');
         });
 
         it('replace single html element by html element', () => {
@@ -57,10 +57,10 @@ describe('patch', () => {
             tag('span');
             end();
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomElement;
-            nse(n1.$, e1);
-            se(n1.$.tagName, 'SPAN');
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomElement;
+            nse(n1.$node, e1);
+            se(n1.$node.tagName, 'SPAN');
         });
 
         it('replace single html element by text node', () => {
@@ -70,10 +70,10 @@ describe('patch', () => {
             patch(vdom);
             text('text');
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomText;
-            nse(n1.$, e1);
-            se(n1.$.textContent, 'text');
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomText;
+            nse(n1.$node, e1);
+            se(n1.$node.textContent, 'text');
         });
 
         it('replace single text node by html element', () => {
@@ -84,10 +84,10 @@ describe('patch', () => {
             tag('div');
             end();
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomElement;
-            nse(n1.$, e1);
-            se(n1.$.tagName, 'DIV');
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomElement;
+            nse(n1.$node, e1);
+            se(n1.$node.tagName, 'DIV');
         });
 
         it('replace single text node by comment node', () => {
@@ -97,10 +97,10 @@ describe('patch', () => {
             patch(vdom);
             comment('comment');
             end();
-            se(vdom._.length, 1);
-            const n1 = vdom._[0] as DomComment;
-            nse(n1.$, e1);
-            se(n1.$.textContent, 'comment');
+            se(vdom.$nodes.length, 1);
+            const n1 = vdom.$nodes[0] as DomComment;
+            nse(n1.$node, e1);
+            se(n1.$node.textContent, 'comment');
         });
 
         it('update content of one node and replace another node', () => {
@@ -116,17 +116,17 @@ describe('patch', () => {
             text('description');
             end();
             end();
-            se(vdom._.length, 2);
-            const n1 = vdom._[0] as DomElement;
-            const n2 = vdom._[1] as DomElement;
-            se(n1.$, elm1);
-            nse(n2.$, elm2);
-            se(n1._.length, 1);
-            se(n2._.length, 1);
-            se(n1.$.childNodes.length, 1);
-            se(n2.$.childNodes.length, 1);
-            se(n1.$.childNodes[0].textContent, 'main text');
-            se(n2.$.childNodes[0].textContent, 'description');
+            se(vdom.$nodes.length, 2);
+            const n1 = vdom.$nodes[0] as DomElement;
+            const n2 = vdom.$nodes[1] as DomElement;
+            se(n1.$node, elm1);
+            nse(n2.$node, elm2);
+            se(n1.$nodes.length, 1);
+            se(n2.$nodes.length, 1);
+            se(n1.$node.childNodes.length, 1);
+            se(n2.$node.childNodes.length, 1);
+            se(n1.$node.childNodes[0].textContent, 'main text');
+            se(n2.$node.childNodes[0].textContent, 'description');
         });
 
         it('reuse single node, append several nodes at end', () => {
@@ -138,7 +138,7 @@ describe('patch', () => {
                 text('\n}\n');
             } end();
 
-            se(vdom.$.innerHTML, 'interface Person {\n<span class="hl-code">    name: string;</span>\n}\n');
+            se(vdom.$node.innerHTML, 'interface Person {\n<span class="hl-code">    name: string;</span>\n}\n');
 
             patch(vdom); {
                 tag('span', _, 'hl-keyword'); {
@@ -155,7 +155,7 @@ describe('patch', () => {
                 text(';\n}\n');
             } end();
 
-            se(vdom.$.innerHTML, '<span class="hl-keyword">interface</span> <span class="hl-title">Person</span> {\n    name: <span class="hl-builtin">string</span>;\n}\n');
+            se(vdom.$node.innerHTML, '<span class="hl-keyword">interface</span> <span class="hl-title">Person</span> {\n    name: <span class="hl-builtin">string</span>;\n}\n');
         });
     });
 
@@ -167,7 +167,7 @@ describe('patch', () => {
                 end();
                 end();
 
-                const n1 = vdom.$.firstChild as Element;
+                const n1 = vdom.$node.firstChild as Element;
 
                 se(n1.tagName, 'DIV');
             });
@@ -405,7 +405,7 @@ describe('patch', () => {
                 end();
                 end();
 
-                se(elm, vdom.$);
+                se(elm, vdom.$node);
                 se(elm.tagName, 'DIV');
                 se(elm.id, 'some-id');
             });
